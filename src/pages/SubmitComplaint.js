@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 import { saveComplaint } from '../services/aiEngine';
-import { pyFullAnalysis, pyClassifyComplaint, pyPredictPriority, pyGenerateRAGResponse, pyGenerateAISummary } from '../services/pythonAiService';
+import { pyFullAnalysis, pyClassifyComplaint, pyPredictPriority, pyGenerateRAGResponse, pyGenerateAISummary, pyGeminiVoiceTranslate } from '../services/pythonAiService';
 import { sendUrgentComplaintEmail } from '../services/emailService';
 import { awardPoints } from '../services/gamification';
 import { FiSend, FiCpu, FiMapPin, FiFileText, FiAlertTriangle, FiCheckCircle, FiLoader, FiMail, FiZap, FiMic, FiMicOff } from 'react-icons/fi';
@@ -37,6 +37,36 @@ async function callGeminiForVoice(prompt) {
   return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
 }
 
+const locations = [
+  'Block 1 - Ground Floor',
+  'Block 1 - 1st Floor',
+  'Block 1 - 2nd Floor',
+  'Block 1 - Computer Lab 1',
+  'Block 1 - Computer Lab 2',
+  'Block 1 - Server Room',
+  'Block 2 - Ground Floor',
+  'Block 2 - 1st Floor',
+  'Block 2 - 2nd Floor',
+  'Block 3 - Ground Floor',
+  'Block 3 - 1st Floor',
+  'Block 3 - Room 101-110',
+  'Block 3 - Room 201-210',
+  'Block 4 - Ground Floor',
+  'Block 4 - 1st Floor',
+  'Block 5 - Ground Floor',
+  'Block 5 - 1st Floor',
+  'Library - Ground Floor',
+  'Library - 1st Floor',
+  'Hostel - Boys Block A',
+  'Hostel - Boys Block B',
+  'Hostel - Girls Block A',
+  'Hostel - Girls Block B',
+  'Sports Ground',
+  'Parking Area',
+  'Campus Grounds',
+  'Other'
+];
+
 export default function SubmitComplaint() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -59,36 +89,6 @@ export default function SubmitComplaint() {
   const [voiceProcessing, setVoiceProcessing] = useState(false);
   const [voiceLang, setVoiceLang] = useState('en-IN');
   const recognitionRef = useRef(null);
-
-  const locations = [
-    'Block 1 - Ground Floor',
-    'Block 1 - 1st Floor',
-    'Block 1 - 2nd Floor',
-    'Block 1 - Computer Lab 1',
-    'Block 1 - Computer Lab 2',
-    'Block 1 - Server Room',
-    'Block 2 - Ground Floor',
-    'Block 2 - 1st Floor',
-    'Block 2 - 2nd Floor',
-    'Block 3 - Ground Floor',
-    'Block 3 - 1st Floor',
-    'Block 3 - Room 101-110',
-    'Block 3 - Room 201-210',
-    'Block 4 - Ground Floor',
-    'Block 4 - 1st Floor',
-    'Block 5 - Ground Floor',
-    'Block 5 - 1st Floor',
-    'Library - Ground Floor',
-    'Library - 1st Floor',
-    'Hostel - Boys Block A',
-    'Hostel - Boys Block B',
-    'Hostel - Girls Block A',
-    'Hostel - Girls Block B',
-    'Sports Ground',
-    'Parking Area',
-    'Campus Grounds',
-    'Other'
-  ];
 
   const updateField = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -124,6 +124,85 @@ export default function SubmitComplaint() {
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
+
+  // Process voice text with Gemini AI — translate + extract complaint details (supporting backend fallback)
+  const processVoiceWithAI = useCallback(async (textToProcess) => {
+    const text = textToProcess || voiceText;
+    if (!text.trim()) {
+      toast.warning('No speech detected. Please speak and try again.');
+      return;
+    }
+
+    setVoiceProcessing(true);
+
+    try {
+      const prompt = `You are a smart assistant for a college campus complaint system.
+
+A user has spoken (possibly in Hindi, Telugu, Tamil, Kannada, Marathi, Bengali, Urdu, or any other Indian language, or English). Their speech has been transcribed as:
+"${text}"
+
+Your job:
+1. Translate the speech to clear, proper English
+2. Understand the complaint/problem they described
+3. Generate a short title (5-10 words) for the complaint
+4. Generate a detailed English description (2-4 sentences) of the complaint
+5. Try to identify the location from their speech. Match it to one of these campus locations if possible: ${locations.join(', ')}. If no match, return "Other".
+
+IMPORTANT: The transcription may be messy or in mixed language. Use your best understanding.
+
+Respond in EXACTLY this JSON format, nothing else:
+{
+  "translatedText": "Full English translation of what they said",
+  "title": "Short complaint title",
+  "description": "Detailed English description of the problem",
+  "location": "Best matching location or Other"
+}`;
+
+      let parsed = null;
+
+      // Try frontend first if key is available
+      if (GEMINI_API_KEY && GEMINI_API_KEY !== 'YOUR_GEMINI_API_KEY_HERE') {
+        try {
+          const raw = await callGeminiForVoice(prompt);
+          const jsonMatch = raw.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            parsed = JSON.parse(jsonMatch[0]);
+          }
+        } catch (e) {
+          console.warn('Frontend voice translate failed, falling back to backend...', e);
+        }
+      }
+
+      // Backend fallback if frontend failed or key wasn't available
+      if (!parsed) {
+        parsed = await pyGeminiVoiceTranslate(text, locations);
+      }
+
+      if (!parsed || !parsed.title) {
+        throw new Error('AI was unable to parse transcription');
+      }
+
+      // Auto-fill the form
+      setFormData({
+        title: parsed.title || '',
+        description: parsed.description || parsed.translatedText || '',
+        location: locations.includes(parsed.location) ? parsed.location : ''
+      });
+
+      setAiAnalysis(null); // Reset so user must re-analyze
+      toast.success('✅ Voice translated & form filled by AI!');
+    } catch (err) {
+      console.error('Voice AI processing error:', err);
+      // Fallback: just put raw text in description
+      setFormData(prev => ({
+        ...prev,
+        description: prev.description + (prev.description ? '\n' : '') + text
+      }));
+      toast.warning('AI translation unavailable. Raw speech text added to description.');
+    }
+
+    setVoiceProcessing(false);
+  }, [voiceText]);
 
   // ===== VOICE ASSISTANT LOGIC =====
   const startListening = useCallback(() => {
@@ -167,6 +246,10 @@ export default function SubmitComplaint() {
 
     recognition.onend = () => {
       setIsListening(false);
+      // Automatically trigger translation in background if we have text
+      if (finalTranscript.trim()) {
+        processVoiceWithAI(finalTranscript);
+      }
     };
 
     recognitionRef.current = recognition;
@@ -174,7 +257,7 @@ export default function SubmitComplaint() {
     setIsListening(true);
     setVoiceText('');
     toast.info('🎙️ Listening... Speak now');
-  }, [voiceLang]);
+  }, [voiceLang, processVoiceWithAI]);
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current) {
@@ -182,66 +265,6 @@ export default function SubmitComplaint() {
     }
     setIsListening(false);
   }, []);
-
-  // Process voice text with Gemini AI — translate + extract complaint details
-  const processVoiceWithAI = async () => {
-    if (!voiceText.trim()) {
-      toast.warning('No speech detected. Please speak and try again.');
-      return;
-    }
-
-    setVoiceProcessing(true);
-
-    try {
-      const prompt = `You are a smart assistant for a college campus complaint system.
-
-A user has spoken (possibly in Hindi, Telugu, Tamil, Kannada, Marathi, Bengali, Urdu, or any other Indian language, or English). Their speech has been transcribed as:
-"${voiceText}"
-
-Your job:
-1. Translate the speech to clear, proper English
-2. Understand the complaint/problem they described
-3. Generate a short title (5-10 words) for the complaint
-4. Generate a detailed English description (2-4 sentences) of the complaint
-5. Try to identify the location from their speech. Match it to one of these campus locations if possible: ${locations.join(', ')}. If no match, return "Other".
-
-IMPORTANT: The transcription may be messy or in mixed language. Use your best understanding.
-
-Respond in EXACTLY this JSON format, nothing else:
-{
-  "translatedText": "Full English translation of what they said",
-  "title": "Short complaint title",
-  "description": "Detailed English description of the problem",
-  "location": "Best matching location or Other"
-}`;
-
-      const raw = await callGeminiForVoice(prompt);
-      const jsonMatch = raw.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error('Could not parse AI response');
-
-      const parsed = JSON.parse(jsonMatch[0]);
-
-      // Auto-fill the form
-      setFormData({
-        title: parsed.title || '',
-        description: parsed.description || parsed.translatedText || '',
-        location: locations.includes(parsed.location) ? parsed.location : ''
-      });
-
-      setAiAnalysis(null); // Reset so user must re-analyze
-      toast.success('✅ Voice translated & form filled by AI!');
-    } catch (err) {
-      console.error('Voice AI processing error:', err);
-      // Fallback: just put raw text in description
-      setFormData(prev => ({
-        ...prev,
-        description: prev.description + (prev.description ? '\n' : '') + voiceText
-      }));
-      toast.warning('AI translation unavailable. Raw speech text added to description.');
-    }
-
-    setVoiceProcessing(false);
-  };
 
   const handleAnalyze = async () => {
     if (!formData.description.trim() || formData.description.trim().length < 10) {

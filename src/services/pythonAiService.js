@@ -62,6 +62,10 @@ export async function pyGeminiChat(message, history, stats) {
   return callPythonAI({ action: 'gemini_chat', message, history, stats });
 }
 
+export async function pyGeminiVoiceTranslate(text, locations) {
+  return callPythonAI({ action: 'gemini_voice_translate', text, locations });
+}
+
 // ========== Full Analysis Pipeline (Python Backend) ==========
 
 export async function pyFullAnalysis(description) {

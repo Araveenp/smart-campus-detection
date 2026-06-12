@@ -574,6 +574,37 @@ Respond directly as the AI assistant:"""
     return {'text': text, 'source': 'gemini'}
 
 
+def gemini_voice_translate(voice_text: str, locations: list) -> dict:
+    """Translate and parse voice complaints in any language using Gemini."""
+    prompt = f"""You are a smart assistant for a college campus complaint system at Vardhaman College of Engineering.
+
+A user has spoken (possibly in Hindi, Telugu, Tamil, Kannada, Marathi, Bengali, Urdu, or any other Indian language, or English). Their speech has been transcribed as:
+"{voice_text}"
+
+Your job:
+1. Translate the speech to clear, proper English
+2. Understand the complaint/problem they described
+3. Generate a short title (5-10 words) for the complaint
+4. Generate a detailed English description (2-4 sentences) of the complaint
+5. Try to identify the location from their speech. Match it to one of these campus locations if possible: {', '.join(locations)}. If no match, return "Other".
+
+IMPORTANT: The transcription may be messy or in mixed language. Use your best understanding.
+
+Respond in EXACTLY this JSON format, no markdown formatting (no ```json code blocks), just the raw JSON:
+{{
+  "translatedText": "Full English translation of what they said",
+  "title": "Short complaint title",
+  "description": "Detailed English description of the problem",
+  "location": "Best matching location or Other"
+}}"""
+
+    raw = call_gemini(prompt, 0.2)
+    match = re.search(r'\{[\s\S]*\}', raw)
+    if not match:
+        raise Exception('Invalid voice translation response')
+    return json.loads(match.group())
+
+
 # =====================================================
 # Full Analysis Pipeline (Gemini + Rule-Based Fallback)
 # =====================================================
@@ -701,6 +732,12 @@ class handler(BaseHTTPRequestHandler):
                     data.get('message', ''),
                     data.get('history', []),
                     data.get('stats', {})
+                )
+
+            elif action == 'gemini_voice_translate':
+                result = gemini_voice_translate(
+                    data.get('text', ''),
+                    data.get('locations', [])
                 )
 
             elif action == 'health':
