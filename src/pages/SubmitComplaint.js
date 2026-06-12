@@ -67,6 +67,84 @@ const locations = [
   'Other'
 ];
 
+function localParseVoiceSpeech(text) {
+  const lower = text.toLowerCase();
+  
+  // Basic dictionary for common Telugu/Hindi words to English
+  const dictionary = {
+    'kulaayi': 'tap',
+    'kulayi': 'tap',
+    'neeru': 'water',
+    'neellu': 'water',
+    'leak': 'leak',
+    'leakage': 'leak',
+    'pani cheyadam ledu': 'not working',
+    'pani chestale': 'not working',
+    'pani cheyyadam ledu': 'not working',
+    'power': 'power',
+    'electricity': 'electricity',
+    'current': 'power',
+    'poyindi': 'outage',
+    'wifi': 'wifi',
+    'internet': 'internet',
+    'raavatledu': 'not working',
+    'ravadam ledu': 'not working',
+    'classroom': 'classroom',
+    'class room': 'classroom',
+    'lab': 'lab',
+    'fan': 'fan',
+    'ac': 'ac',
+    'light': 'light',
+    'broken': 'broken',
+    'pagilindi': 'broken',
+    'trash': 'trash',
+    'table': 'table',
+    'chair': 'chair',
+    'bunk': 'bed',
+    'bed': 'bed',
+    'room': 'room',
+    'dhust': 'dust',
+    'canteen': 'canteen',
+    'food': 'food',
+    'annam': 'food'
+  };
+
+  let detectedKeywords = [];
+  for (const [key, value] of Object.entries(dictionary)) {
+    if (lower.includes(key)) {
+      detectedKeywords.push(value);
+    }
+  }
+
+  // Determine a matched location
+  let matchedLocation = 'Other';
+  for (const loc of locations) {
+    const parts = loc.toLowerCase().split('-');
+    const matches = parts.some(part => lower.includes(part.trim()));
+    if (matches) {
+      matchedLocation = loc;
+      break;
+    }
+  }
+
+  // Create a default title and description
+  let title = 'Campus Maintenance Report';
+  let description = text;
+
+  if (detectedKeywords.length > 0) {
+    const uniqKeywords = [...new Set(detectedKeywords)];
+    title = `${uniqKeywords.map(k => k.charAt(0).toUpperCase() + k.slice(1)).join(' & ')} Incident`;
+    description = `Auto-parsed voice report: ${text}`;
+  }
+
+  return {
+    translatedText: text,
+    title: title,
+    description: description,
+    location: matchedLocation
+  };
+}
+
 export default function SubmitComplaint() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -193,13 +271,14 @@ Respond in EXACTLY this JSON format, nothing else:
       setAiAnalysis(null); // Reset so user must re-analyze
       toast.success('✅ Voice translated & form filled by AI!');
     } catch (err) {
-      console.error('Voice AI processing error:', err);
-      // Fallback: just put raw text in description
-      setFormData(prev => ({
-        ...prev,
-        description: prev.description + (prev.description ? '\n' : '') + text
-      }));
-      toast.warning('AI translation unavailable. Raw speech text added to description.');
+      console.error('Voice AI processing error, using local fallback parser:', err);
+      const parsed = localParseVoiceSpeech(text);
+      setFormData({
+        title: parsed.title,
+        description: parsed.description,
+        location: locations.includes(parsed.location) ? parsed.location : ''
+      });
+      toast.success('✅ Voice parsed & form filled by local fallback!');
     }
 
     setVoiceProcessing(false);
@@ -216,9 +295,8 @@ Respond in EXACTLY this JSON format, nothing else:
     // Determine language prefix (e.g. te-IN -> te, hi-IN -> hi, en-IN -> en)
     const langCode = voiceLang.split('-')[0];
     
-    // Connect to Deepgram live transcription WebSocket
-    // Query parameter key is fully supported by browser WebSockets
-    const socket = new WebSocket(`wss://api.deepgram.com/v1/listen?model=nova-3&language=${langCode}&smart_format=true`, [
+    // Connect to Deepgram live transcription WebSocket with interim_results and utterance_end detection
+    const socket = new WebSocket(`wss://api.deepgram.com/v1/listen?model=nova-3&language=${langCode}&smart_format=true&interim_results=true&utterance_end_ms=1000`, [
       'token',
       DEEPGRAM_KEY
     ]);
@@ -299,10 +377,20 @@ Respond in EXACTLY this JSON format, nothing else:
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
     }
     if (websocketRef.current && websocketRef.current.readyState === WebSocket.OPEN) {
+      // Send CloseStream. Deepgram processes remaining buffers and closes the socket from server side.
       websocketRef.current.send(JSON.stringify({ type: 'CloseStream' }));
-      websocketRef.current.close();
+      
+      // Safety timeout: if server doesn't close connection within 2 seconds, client forces close.
+      const socketToClose = websocketRef.current;
+      setTimeout(() => {
+        if (socketToClose.readyState === WebSocket.OPEN) {
+          console.log('Force closing socket after timeout');
+          socketToClose.close();
+        }
+      }, 2000);
+    } else {
+      setIsListening(false);
     }
-    setIsListening(false);
   }, []);
 
   const handleAnalyze = async () => {
