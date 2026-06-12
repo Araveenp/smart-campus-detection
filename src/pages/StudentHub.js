@@ -84,16 +84,16 @@ export default function StudentHub() {
         </div>
 
         {/* CTA Banner */}
-        <div className="bg-white/[0.01] border border-white/[0.05] rounded-3xl p-12 text-center shadow-sm inner-glow">
+        <div className="bg-white/[0.01] border border-white/[0.05] rounded-3xl p-6 sm:p-12 text-center shadow-sm inner-glow">
           <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">Ready to improve your campus?</h2>
           <p className="text-gray-400 mb-8 max-w-lg mx-auto">
             Create your profile now and join hundreds of students actively co-managing the campus environment.
           </p>
-          <div className="flex gap-4 justify-center">
-            <Link to="/signup" className="bg-white text-black px-8 py-3 rounded-full font-semibold hover:bg-opacity-90 transition-transform hover:scale-105">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-[280px] sm:max-w-none mx-auto">
+            <Link to="/signup" className="w-full sm:w-auto text-center bg-white text-black px-8 py-3 rounded-full font-semibold hover:bg-opacity-90 transition-transform hover:scale-105">
               Register Student Profile
             </Link>
-            <Link to="/login" className="border border-white/10 text-white px-8 py-3 rounded-full hover:bg-white/5 transition-colors">
+            <Link to="/login" className="w-full sm:w-auto text-center border border-white/10 text-white px-8 py-3 rounded-full hover:bg-white/5 transition-colors">
               Access Student Login
             </Link>
           </div>

@@ -6,6 +6,7 @@ export default function LandingPage() {
   const [currentDate, setCurrentDate] = useState('');
   const [currentTime, setCurrentTime] = useState('');
   const [activeMockTab, setActiveMockTab] = useState('Overview');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const mockDashboardRef = useRef(null);
   const location = useLocation();
 
@@ -48,10 +49,10 @@ export default function LandingPage() {
     <div className="font-body-md antialiased selection:bg-custom-btn-primary selection:text-white bg-[#070708] text-[#e5e2e3] min-h-screen">
       {/* 1. Fixed Header */}
       <header className="bg-custom-bg/90 backdrop-blur-md w-full top-0 h-[80px] border-b border-custom-divider z-50 fixed">
-        <div className="flex justify-between items-center w-full px-margin-safe max-w-[1728px] mx-auto h-full">
+        <div className="flex justify-between items-center w-full px-4 md:px-margin-safe max-w-[1728px] mx-auto h-full">
           <div className="flex items-center gap-sm">
             <div className="w-8 h-8 rounded-full border border-custom-text-muted flex items-center justify-center text-on-surface font-h3 font-bold text-sm">S</div>
-            <span className="font-h3 text-h3 font-bold tracking-tight text-on-surface">SmartCampus</span>
+            <span className="font-h3 text-lg md:text-h3 font-bold tracking-tight text-on-surface">SmartCampus</span>
           </div>
           <nav className="hidden md:flex gap-10 h-full items-center">
             <button className="font-body-md text-body-md text-custom-text-muted hover:text-white transition-colors duration-200" onClick={() => handleMockNavClick('Overview')}>Platform</button>
@@ -59,97 +60,113 @@ export default function LandingPage() {
             <button className="font-body-md text-body-md text-custom-text-muted hover:text-white transition-colors duration-200" onClick={() => handleMockNavClick('Campus Heatmap')}>Heatmap</button>
             <button className="font-body-md text-body-md text-custom-text-muted hover:text-white transition-colors duration-200" onClick={() => handleMockNavClick('Leaderboard')}>Leaderboard</button>
           </nav>
-          <div className="flex gap-6 items-center">
+          <div className="hidden sm:flex gap-4 md:gap-6 items-center">
             <Link className="font-body-md text-body-md text-custom-text-muted hover:text-on-surface transition-colors duration-200" to="/login">Log in</Link>
-            <Link className="font-body-md text-body-md bg-white text-black px-6 py-2.5 rounded-full hover:bg-opacity-90 transition-all duration-200 font-medium shadow-sm hover:scale-105" to="/signup">Start free</Link>
+            <Link className="font-body-md text-[13px] md:text-body-md bg-white text-black px-4 md:px-6 py-2 md:py-2.5 rounded-full hover:bg-opacity-90 transition-all duration-200 font-medium shadow-sm hover:scale-105" to="/signup">Start free</Link>
           </div>
+          <button className="md:hidden text-white flex items-center justify-center p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            <span className="material-symbols-outlined text-[24px]">{mobileMenuOpen ? 'close' : 'menu'}</span>
+          </button>
         </div>
+        {/* Mobile Navigation Dropdown */}
+        {mobileMenuOpen && (
+          <div className="md:hidden w-full bg-[#0d0e0f] border-b border-custom-divider px-6 py-6 flex flex-col gap-4">
+            <button className="text-left font-body-md text-body-md text-custom-text-muted hover:text-white py-2" onClick={() => { handleMockNavClick('Overview'); setMobileMenuOpen(false); }}>Platform</button>
+            <button className="text-left font-body-md text-body-md text-custom-text-muted hover:text-white py-2" onClick={() => { handleMockNavClick('Overview'); setMobileMenuOpen(false); }}>Dashboard</button>
+            <button className="text-left font-body-md text-body-md text-custom-text-muted hover:text-white py-2" onClick={() => { handleMockNavClick('Campus Heatmap'); setMobileMenuOpen(false); }}>Heatmap</button>
+            <button className="text-left font-body-md text-body-md text-custom-text-muted hover:text-white py-2" onClick={() => { handleMockNavClick('Leaderboard'); setMobileMenuOpen(false); }}>Leaderboard</button>
+            <div className="flex gap-4 pt-4 border-t border-white/[0.05] items-center">
+              <Link className="flex-1 text-center font-body-md text-body-md text-custom-text-muted hover:text-on-surface py-2.5 border border-white/[0.1] rounded-full" to="/login" onClick={() => setMobileMenuOpen(false)}>Log in</Link>
+              <Link className="flex-1 text-center font-body-md text-body-md bg-white text-black py-2.5 rounded-full font-medium" to="/signup" onClick={() => setMobileMenuOpen(false)}>Start free</Link>
+            </div>
+          </div>
+        )}
       </header>
 
       <main className="max-w-[1728px] mx-auto mt-[80px]">
         {/* 2. Hero & 3. Hero Dashboard Mockup */}
-        <section className="px-margin-safe relative pt-48 pb-32">
+        <section className="px-4 md:px-margin-safe relative pt-20 md:pt-48 pb-16 md:pb-32">
           <div className="max-w-[1516px] mx-auto">
-            <div className="flex flex-col mb-32 items-center text-center">
+            <div className="flex flex-col mb-16 md:mb-32 items-center text-center">
               
               {/* Dynamic Enlarged Date Badge */}
-              <div className="mb-8 flex items-center gap-3 bg-white/[0.02] border border-white/[0.08] px-5 py-2.5 rounded-full backdrop-blur-md">
-                <span className="w-2.5 h-2.5 rounded-full bg-secondary shadow-[0_0_10px_#50d8e9] animate-pulse"></span>
-                <span className="font-mono-data text-label-sm text-custom-text-muted tracking-widest uppercase">
-                  OPERATIONAL DATE: <strong className="text-white text-[15px] font-bold ml-1 tracking-tight">{currentDate}</strong>{" // "}<span className="text-secondary">{currentTime}</span>
+              <div className="mb-8 flex items-center gap-3 bg-white/[0.02] border border-white/[0.08] px-3 sm:px-5 py-2 sm:py-2.5 rounded-full backdrop-blur-md max-w-full">
+                <span className="w-2.5 h-2.5 rounded-full bg-secondary shadow-[0_0_10px_#50d8e9] animate-pulse flex-shrink-0"></span>
+                <span className="font-mono-data text-[10px] sm:text-label-sm text-custom-text-muted tracking-widest uppercase truncate">
+                  OPERATIONAL DATE: <strong className="text-white text-[13px] sm:text-[15px] font-bold ml-1 tracking-tight">{currentDate}</strong>{" // "}<span className="text-secondary">{currentTime}</span>
                 </span>
               </div>
 
-              <h1 className="font-h3 text-hero-headline text-on-surface mb-8 max-w-[1000px]">
+              <h1 className="font-h3 text-[36px] sm:text-[54px] md:text-hero-headline text-on-surface mb-8 max-w-[1000px] leading-tight">
                 Smart Campus<br/>Problem Detection System
               </h1>
-              <p className="font-body-lg text-[22px] text-custom-text-muted mb-12 max-w-3xl">
+              <p className="font-body-lg text-[16px] sm:text-[18px] md:text-[22px] text-custom-text-muted mb-12 max-w-3xl leading-relaxed">
                 Automatically classify student complaints, predict priority levels, and generate AI-powered action plans using Retrieval-Augmented Generation.
               </p>
-              <div className="flex gap-6 justify-center items-center">
-                <Link to="/signup" className="bg-white text-black px-8 py-3.5 rounded-full font-body-lg font-medium shadow-sm hover:scale-105 transition-transform">Get started</Link>
-                <Link to="/login" className="bg-transparent border border-custom-divider text-on-surface px-8 py-3.5 rounded-full font-body-lg hover:bg-white/5 transition-colors">Admin panel</Link>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-[280px] sm:max-w-none">
+                <Link to="/signup" className="w-full sm:w-auto text-center bg-white text-black px-8 py-3.5 rounded-full font-body-lg font-medium shadow-sm hover:scale-105 transition-transform">Get started</Link>
+                <Link to="/login" className="w-full sm:w-auto text-center bg-transparent border border-custom-divider text-on-surface px-8 py-3.5 rounded-full font-body-lg hover:bg-white/5 transition-colors">Admin panel</Link>
               </div>
-              <div className="mt-16 text-center">
-                <span className="text-custom-text-muted font-mono-data hover:text-primary flex items-center justify-center gap-2 transition-colors">
+              <div className="mt-12 md:mt-16 text-center">
+                <span className="text-custom-text-muted font-mono-data hover:text-primary flex items-center justify-center gap-2 transition-colors text-xs sm:text-sm">
                   AI operating layer active at smartcampus.edu/dashboard <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
                 </span>
               </div>
             </div>
 
             {/* Hero Dashboard Mockup */}
-            <div ref={mockDashboardRef} className="w-full bg-[#0a0a0b] rounded-2xl border border-white/[0.08] overflow-hidden flex h-[720px] inner-glow shadow-2xl relative shadow-black/50">
+            <div ref={mockDashboardRef} className="w-full bg-[#0a0a0b] rounded-2xl border border-white/[0.08] overflow-hidden flex flex-col md:flex-row h-auto md:h-[720px] inner-glow shadow-2xl relative shadow-black/50">
               
               {/* Sidebar */}
-              <div className="w-72 bg-[#0d0e0f] border-r border-white/[0.05] p-8 flex flex-col gap-6">
-                <div className="text-[11px] text-custom-text-muted uppercase tracking-[0.2em] mb-4 px-2 opacity-50 font-bold">Navigation</div>
-                <div className="flex flex-col gap-2">
+              <div className="w-full md:w-72 bg-[#0d0e0f] border-b md:border-b-0 md:border-r border-white/[0.05] p-4 md:p-8 flex flex-col gap-2 md:gap-6 flex-shrink-0">
+                <div className="hidden md:block text-[11px] text-custom-text-muted uppercase tracking-[0.2em] mb-4 px-2 opacity-50 font-bold">Navigation</div>
+                <div className="flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-x-visible no-scrollbar pb-2 md:pb-0">
                   <button 
                     onClick={() => setActiveMockTab('Overview')}
-                    className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors cursor-pointer text-left ${activeMockTab === 'Overview' ? 'bg-white/[0.06] text-on-surface font-medium shadow-sm inner-glow' : 'text-custom-text-muted hover:text-on-surface hover:bg-white/[0.03]'}`}
+                    className={`flex items-center gap-2 md:gap-4 px-3 md:px-4 py-2 md:py-3 rounded-xl transition-colors cursor-pointer text-left flex-shrink-0 whitespace-nowrap ${activeMockTab === 'Overview' ? 'bg-white/[0.06] text-on-surface font-medium shadow-sm inner-glow' : 'text-custom-text-muted hover:text-on-surface hover:bg-white/[0.03]'}`}
                   >
                     <span className="material-symbols-outlined text-[20px]">grid_view</span>
                     <span className="text-body-md">Overview</span>
                   </button>
                   <button 
                     onClick={() => setActiveMockTab('Live Signals')}
-                    className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors cursor-pointer text-left ${activeMockTab === 'Live Signals' ? 'bg-white/[0.06] text-on-surface font-medium shadow-sm inner-glow' : 'text-custom-text-muted hover:text-on-surface hover:bg-white/[0.03]'}`}
+                    className={`flex items-center gap-2 md:gap-4 px-3 md:px-4 py-2 md:py-3 rounded-xl transition-colors cursor-pointer text-left flex-shrink-0 whitespace-nowrap ${activeMockTab === 'Live Signals' ? 'bg-white/[0.06] text-on-surface font-medium shadow-sm inner-glow' : 'text-custom-text-muted hover:text-on-surface hover:bg-white/[0.03]'}`}
                   >
                     <span className="material-symbols-outlined text-[20px]">sensors</span>
                     <span className="text-body-md">Live Signals</span>
                   </button>
                   <button 
                     onClick={() => setActiveMockTab('AI Resolutions')}
-                    className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors cursor-pointer text-left ${activeMockTab === 'AI Resolutions' ? 'bg-white/[0.06] text-on-surface font-medium shadow-sm inner-glow' : 'text-custom-text-muted hover:text-on-surface hover:bg-white/[0.03]'}`}
+                    className={`flex items-center gap-2 md:gap-4 px-3 md:px-4 py-2 md:py-3 rounded-xl transition-colors cursor-pointer text-left flex-shrink-0 whitespace-nowrap ${activeMockTab === 'AI Resolutions' ? 'bg-white/[0.06] text-on-surface font-medium shadow-sm inner-glow' : 'text-custom-text-muted hover:text-on-surface hover:bg-white/[0.03]'}`}
                   >
                     <span className="material-symbols-outlined text-[20px]">check_circle</span>
                     <span className="text-body-md">AI Resolutions</span>
                   </button>
                   <button 
                     onClick={() => setActiveMockTab('Analytics')}
-                    className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors cursor-pointer text-left ${activeMockTab === 'Analytics' ? 'bg-white/[0.06] text-on-surface font-medium shadow-sm inner-glow' : 'text-custom-text-muted hover:text-on-surface hover:bg-white/[0.03]'}`}
+                    className={`flex items-center gap-2 md:gap-4 px-3 md:px-4 py-2 md:py-3 rounded-xl transition-colors cursor-pointer text-left flex-shrink-0 whitespace-nowrap ${activeMockTab === 'Analytics' ? 'bg-white/[0.06] text-on-surface font-medium shadow-sm inner-glow' : 'text-custom-text-muted hover:text-on-surface hover:bg-white/[0.03]'}`}
                   >
                     <span className="material-symbols-outlined text-[20px]">bar_chart</span>
                     <span className="text-body-md">Analytics</span>
                   </button>
                   <button 
                     onClick={() => setActiveMockTab('Campus Heatmap')}
-                    className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors cursor-pointer text-left ${activeMockTab === 'Campus Heatmap' ? 'bg-white/[0.06] text-on-surface font-medium shadow-sm inner-glow' : 'text-custom-text-muted hover:text-on-surface hover:bg-white/[0.03]'}`}
+                    className={`flex items-center gap-2 md:gap-4 px-3 md:px-4 py-2 md:py-3 rounded-xl transition-colors cursor-pointer text-left flex-shrink-0 whitespace-nowrap ${activeMockTab === 'Campus Heatmap' ? 'bg-white/[0.06] text-on-surface font-medium shadow-sm inner-glow' : 'text-custom-text-muted hover:text-on-surface hover:bg-white/[0.03]'}`}
                   >
                     <span className="material-symbols-outlined text-[20px]">map</span>
                     <span className="text-body-md">Heatmap</span>
                   </button>
-                  <div className="mt-6 flex flex-col gap-2 pt-6 border-t border-white/[0.05]">
+                  <div className="flex flex-row md:flex-col gap-2 flex-shrink-0 md:mt-6 md:pt-6 md:border-t border-white/[0.05]">
                     <button 
                       onClick={() => setActiveMockTab('Admins')}
-                      className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors cursor-pointer text-left ${activeMockTab === 'Admins' ? 'bg-white/[0.06] text-on-surface font-medium shadow-sm inner-glow' : 'text-custom-text-muted hover:text-on-surface hover:bg-white/[0.03]'}`}
+                      className={`flex items-center gap-2 md:gap-4 px-3 md:px-4 py-2 md:py-3 rounded-xl transition-colors cursor-pointer text-left flex-shrink-0 whitespace-nowrap ${activeMockTab === 'Admins' ? 'bg-white/[0.06] text-on-surface font-medium shadow-sm inner-glow' : 'text-custom-text-muted hover:text-on-surface hover:bg-white/[0.03]'}`}
                     >
                       <span className="material-symbols-outlined text-[20px]">group</span>
                       <span className="text-body-md">Admins</span>
                     </button>
                     <button 
                       onClick={() => setActiveMockTab('Leaderboard')}
-                      className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors cursor-pointer text-left ${activeMockTab === 'Leaderboard' ? 'bg-white/[0.06] text-on-surface font-medium shadow-sm inner-glow' : 'text-custom-text-muted hover:text-on-surface hover:bg-white/[0.03]'}`}
+                      className={`flex items-center gap-2 md:gap-4 px-3 md:px-4 py-2 md:py-3 rounded-xl transition-colors cursor-pointer text-left flex-shrink-0 whitespace-nowrap ${activeMockTab === 'Leaderboard' ? 'bg-white/[0.06] text-on-surface font-medium shadow-sm inner-glow' : 'text-custom-text-muted hover:text-on-surface hover:bg-white/[0.03]'}`}
                     >
                       <span className="material-symbols-outlined text-[20px]">leaderboard</span>
                       <span className="text-body-md">Leaderboard</span>
@@ -159,12 +176,12 @@ export default function LandingPage() {
               </div>
 
               {/* Center Area */}
-              <div className="flex-1 p-10 flex flex-col gap-10 bg-[#0a0a0b] relative overflow-y-auto">
+              <div className="flex-1 p-6 md:p-10 flex flex-col gap-6 md:gap-10 bg-[#0a0a0b] relative max-h-[500px] md:max-h-none overflow-y-auto w-full">
                 
                 {/* 1. Render Overview View */}
                 {activeMockTab === 'Overview' && (
                   <>
-                    <div className="grid grid-cols-4 gap-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
                       {/* System Date Card */}
                       <div className="bg-[#121315] border border-white/[0.05] rounded-2xl p-6 inner-glow flex flex-col justify-between">
                         <div className="flex justify-between items-start mb-2">
@@ -260,7 +277,7 @@ export default function LandingPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-8">
                       <div className="bg-[#121315] border border-white/[0.05] rounded-2xl p-6 inner-glow">
                         <div className="text-body-md font-bold text-on-surface border-b border-white/[0.05] pb-4 mb-4">Focus queue</div>
                         <div className="space-y-4">
@@ -573,7 +590,7 @@ export default function LandingPage() {
               </div>
 
               {/* Right Panel */}
-              <div className="w-[380px] bg-[#0d0e0f] border-l border-white/[0.05] p-8 flex flex-col gap-8 relative z-10 shadow-[-10px_0_30px_rgba(0,0,0,0.5)]">
+              <div className="w-full md:w-[380px] bg-[#0d0e0f] border-t md:border-t-0 md:border-l border-white/[0.05] p-6 md:p-8 flex flex-col gap-6 md:gap-8 relative z-10 shadow-none md:shadow-[-10px_0_30px_rgba(0,0,0,0.5)]">
                 <div className="text-[14px] font-bold text-on-surface border-b border-white/[0.05] pb-6 mb-2 flex justify-between items-center px-1">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center">
@@ -641,13 +658,13 @@ export default function LandingPage() {
         </section>
 
         {/* 4. Product Principle */}
-        <section className="px-margin-safe flex flex-col justify-center items-center relative overflow-hidden py-32 border-t border-white/[0.05]">
+        <section className="px-margin-safe flex flex-col justify-center items-center relative overflow-hidden py-16 md:py-32 border-t border-white/[0.05]">
           <div className="max-w-[1516px] w-full mx-auto">
-            <h2 className="font-h2 text-[56px] leading-[1.1] text-center text-on-surface mb-32 max-w-4xl mx-auto tracking-tight">AI architecture. Structured campus response.</h2>
-            <div className="grid grid-cols-3 gap-12">
+            <h2 className="font-h2 text-[32px] sm:text-[44px] md:text-[56px] leading-[1.1] text-center text-on-surface mb-12 md:mb-32 max-w-4xl mx-auto tracking-tight">AI architecture. Structured campus response.</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-12">
               
               {/* Card 1 */}
-              <div className="border border-white/[0.05] rounded-3xl p-8 bg-[#0a0a0b] relative h-[480px] flex flex-col transition-transform hover:-translate-y-2 duration-300">
+              <div className="border border-white/[0.05] rounded-3xl p-8 bg-[#0a0a0b] relative h-auto min-h-[380px] md:h-[480px] flex flex-col transition-transform hover:-translate-y-2 duration-300">
                 <div className="font-mono-data text-custom-text-muted mb-8 text-[11px] tracking-widest">FIG 0.1 / AI CLASSIFICATION</div>
                 <div className="flex-1 border border-white/[0.03] rounded-2xl bg-[#0d0e0f] flex items-center justify-center p-6">
                   <div className="w-full h-full dot-pattern flex items-center justify-center relative">
@@ -666,7 +683,7 @@ export default function LandingPage() {
               </div>
 
               {/* Card 2 */}
-              <div className="border border-white/[0.05] rounded-3xl p-8 bg-[#0a0a0b] relative h-[480px] flex flex-col transition-transform hover:-translate-y-2 duration-300">
+              <div className="border border-white/[0.05] rounded-3xl p-8 bg-[#0a0a0b] relative h-auto min-h-[380px] md:h-[480px] flex flex-col transition-transform hover:-translate-y-2 duration-300">
                 <div className="font-mono-data text-custom-text-muted mb-8 text-[11px] tracking-widest">FIG 0.2 / KNOWLEDGE GRAPH</div>
                 <div className="flex-1 border border-white/[0.03] rounded-2xl bg-[#0d0e0f] flex items-center justify-center p-6">
                   <div className="w-full h-full dot-pattern flex items-center justify-center relative">
@@ -694,7 +711,7 @@ export default function LandingPage() {
               </div>
 
               {/* Card 3 */}
-              <div className="border border-white/[0.05] rounded-3xl p-8 bg-[#0a0a0b] relative h-[480px] flex flex-col transition-transform hover:-translate-y-2 duration-300">
+              <div className="border border-white/[0.05] rounded-3xl p-8 bg-[#0a0a0b] relative h-auto min-h-[380px] md:h-[480px] flex flex-col transition-transform hover:-translate-y-2 duration-300">
                 <div className="font-mono-data text-custom-text-muted mb-8 text-[11px] tracking-widest">FIG 0.3 / DISPATCH CYCLES</div>
                 <div className="flex-1 border border-white/[0.03] rounded-2xl bg-[#0d0e0f] flex items-center justify-center p-6">
                   <div className="w-full h-full dot-pattern flex items-center justify-center relative">
@@ -716,17 +733,17 @@ export default function LandingPage() {
         </section>
 
         {/* 5. Signal Intelligence */}
-        <section className="px-margin-safe border-t border-white/[0.05] flex items-center relative py-40">
-          <div className="max-w-[1516px] w-full mx-auto grid grid-cols-2 gap-32 items-center">
-            <div className="pr-12">
-              <h2 className="font-h2 text-[56px] leading-[1.1] text-on-surface mb-10 tracking-tight">Turn signals into resolutions</h2>
-              <p className="font-body-lg text-[22px] text-custom-text-muted leading-relaxed">
+        <section className="px-margin-safe border-t border-white/[0.05] flex items-center relative py-16 md:py-40">
+          <div className="max-w-[1516px] w-full mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-32 items-center">
+            <div className="pr-0 md:pr-12">
+              <h2 className="font-h2 text-[32px] sm:text-[44px] md:text-[56px] leading-[1.1] text-on-surface mb-6 md:mb-10 tracking-tight">Turn signals into resolutions</h2>
+              <p className="font-body-lg text-[16px] sm:text-[18px] md:text-[22px] text-custom-text-muted leading-relaxed">
                 Aggregate noisy complaints across campus portals into a single, structured signal stream. SmartCampus AI identifies anomalies, predicts priority levels, and executes standard operating procedures.
               </p>
             </div>
-            <div className="relative h-[680px] w-full">
+            <div className="relative h-[400px] sm:h-[500px] md:h-[680px] w-full">
               {/* Background Mockup */}
-              <div className="absolute inset-0 bg-[#0a0a0b] border border-white/[0.05] rounded-3xl overflow-hidden p-12">
+              <div className="absolute inset-0 bg-[#0a0a0b] border border-white/[0.05] rounded-3xl overflow-hidden p-6 md:p-12">
                 <div className="text-mono-data text-custom-text-muted mb-6 border-b border-white/[0.05] pb-4 tracking-widest text-[11px] uppercase">Campus Pulse</div>
                 <div className="space-y-2 mb-12">
                   <div className="flex justify-between text-[15px] text-on-surface py-4 border-b border-white/[0.03]"><span className="w-1/3 font-medium">Hostel Block B</span><span className="w-1/3 text-custom-text-muted">Water Leakage</span><span className="w-1/3 text-right text-[#ffb4ab] font-medium">High</span></div>
@@ -738,7 +755,7 @@ export default function LandingPage() {
                 </div>
               </div>
               {/* Foreground Card */}
-              <div className="absolute -left-16 top-1/4 w-[400px] bg-[#16171a]/95 backdrop-blur-2xl border border-white/[0.08] rounded-2xl p-8 shadow-[0_30px_60px_rgba(0,0,0,0.5)] z-10 inner-glow">
+              <div className="absolute left-4 md:-left-16 top-[40%] md:top-1/4 w-[calc(100%-2rem)] sm:w-[360px] md:w-[400px] bg-[#16171a]/95 backdrop-blur-2xl border border-white/[0.08] rounded-2xl p-6 md:p-8 shadow-[0_30px_60px_rgba(0,0,0,0.5)] z-10 inner-glow">
                 <div className="text-[14px] font-bold text-on-surface mb-6 flex items-center gap-3 border-b border-white/[0.05] pb-4"><span className="material-symbols-outlined text-[20px] text-primary">forum</span> Resolution Thread</div>
                 <div className="text-[16px] text-on-surface/90 leading-relaxed mb-8">Water pipeline pressure drop in Hostel Block B. Recommended immediate repair crew dispatch.</div>
                 <div className="flex gap-4">
@@ -751,11 +768,11 @@ export default function LandingPage() {
         </section>
 
         {/* 6. Decision Command Center */}
-        <section className="px-margin-safe border-t border-white/[0.05] flex items-center relative py-40">
-          <div className="max-w-[1516px] w-full mx-auto grid grid-cols-2 gap-32 items-center">
-            <div className="relative h-[680px] w-full order-2 md:order-1">
+        <section className="px-margin-safe border-t border-white/[0.05] flex items-center relative py-16 md:py-40">
+          <div className="max-w-[1516px] w-full mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-32 items-center">
+            <div className="relative h-[400px] sm:h-[500px] md:h-[680px] w-full order-2 md:order-1">
               {/* Background Mockup */}
-              <div className="absolute inset-0 bg-[#0a0a0b] border border-white/[0.05] rounded-3xl overflow-hidden p-12">
+              <div className="absolute inset-0 bg-[#0a0a0b] border border-white/[0.05] rounded-3xl overflow-hidden p-6 md:p-12">
                 <div className="flex justify-between text-mono-data text-custom-text-muted mb-12 border-b border-white/[0.05] pb-6 tracking-widest text-[11px] uppercase px-4">
                   <span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span>
                 </div>
@@ -769,7 +786,7 @@ export default function LandingPage() {
                 </div>
               </div>
               {/* Foreground Card */}
-              <div className="absolute -right-16 bottom-1/4 w-[400px] bg-[#16171a]/95 backdrop-blur-2xl border border-white/[0.08] rounded-2xl p-8 shadow-[0_30px_60px_rgba(0,0,0,0.5)] z-10 inner-glow">
+              <div className="absolute right-4 md:-right-16 bottom-[10%] md:bottom-1/4 w-[calc(100%-2rem)] sm:w-[360px] md:w-[400px] bg-[#16171a]/95 backdrop-blur-2xl border border-white/[0.08] rounded-2xl p-6 md:p-8 shadow-[0_30px_60px_rgba(0,0,0,0.5)] z-10 inner-glow">
                 <div className="text-[14px] font-bold text-on-surface mb-6 flex items-center gap-3 border-b border-white/[0.05] pb-4"><span className="material-symbols-outlined text-[20px] text-secondary">rule</span> Resolution Queue</div>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-[15px] border-b border-white/[0.03] py-3"><span className="text-on-surface font-medium">Block B Plumbing</span> <Link to="/login" className="text-primary font-semibold text-[13px] hover:text-white transition-colors bg-primary/10 px-3 py-1.5 rounded-lg">Sign</Link></div>
@@ -777,9 +794,9 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
-            <div className="order-1 md:order-2 pl-12">
-              <h2 className="font-h2 text-[56px] leading-[1.1] text-on-surface mb-10 tracking-tight">Dispatch every resolution quickly</h2>
-              <p className="font-body-lg text-[22px] text-custom-text-muted leading-relaxed">
+            <div className="order-1 md:order-2 pl-0 md:pl-12">
+              <h2 className="font-h2 text-[32px] sm:text-[44px] md:text-[56px] leading-[1.1] text-on-surface mb-6 md:mb-10 tracking-tight">Dispatch every resolution quickly</h2>
+              <p className="font-body-lg text-[16px] sm:text-[18px] md:text-[22px] text-custom-text-muted leading-relaxed">
                 Map critical infrastructure tickets against campus availability timelines. Keep the administration workflow unblocked with clear department ownership and contextual SOP routing.
               </p>
             </div>
@@ -787,32 +804,34 @@ export default function LandingPage() {
         </section>
 
         {/* 7. Insights Timeline */}
-        <section className="px-margin-safe border-t border-white/[0.05] flex flex-col justify-center relative overflow-hidden py-40">
+        <section className="px-margin-safe border-t border-white/[0.05] flex flex-col justify-center relative overflow-hidden py-16 md:py-40">
           <div className="max-w-[1516px] w-full mx-auto relative pt-12">
-            {/* Connecting Line */}
-            <div className="absolute top-1/2 left-0 w-full h-px bg-white/[0.05] -z-10 mt-[-24px]"></div>
-            <div className="grid grid-cols-4 gap-16">
+            {/* Connecting Lines */}
+            <div className="hidden md:block absolute top-1/2 left-0 w-full h-px bg-white/[0.05] -z-10 mt-[-24px]"></div>
+            <div className="block md:hidden absolute left-1/2 top-16 bottom-16 w-px bg-white/[0.05] -z-10 ml-[-1px]"></div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-12 md:gap-16">
               {/* Node 1 */}
               <div className="relative flex flex-col items-center text-center">
-                <div className="w-5 h-5 rounded-full bg-primary mb-12 relative z-10 shadow-[0_0_20px_#bec2ff] border-4 border-[#070708]"></div>
+                <div className="w-5 h-5 rounded-full bg-primary mb-6 md:mb-12 relative z-10 shadow-[0_0_20px_#bec2ff] border-4 border-[#070708]"></div>
                 <h3 className="font-h4 text-[20px] text-on-surface mb-4">AI Classifications</h3>
                 <p className="font-body-md text-[16px] text-custom-text-muted max-w-[280px]">Predict issues and categorize incoming tickets automatically.</p>
               </div>
               {/* Node 2 */}
               <div className="relative flex flex-col items-center text-center">
-                <div className="w-4 h-4 rounded-full bg-[#1c1b1d] border-2 border-white/20 mb-12 mt-0.5 relative z-10"></div>
+                <div className="w-4 h-4 rounded-full bg-[#1c1b1d] border-2 border-white/20 mb-6 md:mb-12 mt-0.5 relative z-10"></div>
                 <h3 className="font-h4 text-[20px] text-on-surface mb-4">Priority Predictors</h3>
                 <p className="font-body-md text-[16px] text-custom-text-muted max-w-[280px]">Predict risk levels to resolve urgent matters first.</p>
               </div>
               {/* Node 3 */}
               <div className="relative flex flex-col items-center text-center">
-                <div className="w-4 h-4 rounded-full bg-[#1c1b1d] border-2 border-white/20 mb-12 mt-0.5 relative z-10"></div>
+                <div className="w-4 h-4 rounded-full bg-[#1c1b1d] border-2 border-white/20 mb-6 md:mb-12 mt-0.5 relative z-10"></div>
                 <h3 className="font-h4 text-[20px] text-on-surface mb-4">RAG Action Plans</h3>
                 <p className="font-body-md text-[16px] text-custom-text-muted max-w-[280px]">Retrieve standard protocols instantly for administrators.</p>
               </div>
               {/* Node 4 */}
               <div className="relative flex flex-col items-center text-center">
-                <div className="w-4 h-4 rounded-full bg-[#1c1b1d] border-2 border-white/20 mb-12 mt-0.5 relative z-10"></div>
+                <div className="w-4 h-4 rounded-full bg-[#1c1b1d] border-2 border-white/20 mb-6 md:mb-12 mt-0.5 relative z-10"></div>
                 <h3 className="font-h4 text-[20px] text-on-surface mb-4">Smart Dispatching</h3>
                 <p className="font-body-md text-[16px] text-custom-text-muted max-w-[280px]">Route tickets instantly to correct department maintenance staff.</p>
               </div>
@@ -821,17 +840,17 @@ export default function LandingPage() {
         </section>
 
         {/* 8. Customer Quotes */}
-        <section className="px-margin-safe border-t border-white/[0.05] flex items-center py-40 bg-[#070708]">
-          <div className="max-w-[1516px] w-full mx-auto grid grid-cols-5 gap-12">
+        <section className="px-margin-safe border-t border-white/[0.05] flex items-center py-16 md:py-40 bg-[#070708]">
+          <div className="max-w-[1516px] w-full mx-auto grid grid-cols-1 md:grid-cols-5 gap-6 md:gap-12">
             {/* Left Quote */}
-            <div className="col-span-3 bg-[#D1EBEB] rounded-[32px] p-16 flex flex-col justify-between h-[560px]">
-              <p className="font-h2 text-[48px] text-black leading-[1.1] max-w-2xl tracking-tight">
+            <div className="col-span-1 md:col-span-3 bg-[#D1EBEB] rounded-[32px] p-8 md:p-16 flex flex-col justify-between h-auto min-h-[320px] md:h-[560px]">
+              <p className="font-h2 text-[28px] sm:text-[36px] md:text-[48px] text-black leading-[1.1] max-w-2xl tracking-tight">
                 "SmartCampus AI completely transformed our campus operations. The response pipeline is faster and students feel heard."
               </p>
             </div>
             {/* Right Quote */}
-            <div className="col-span-2 bg-[#C4FF44] rounded-[32px] p-16 flex flex-col justify-between h-[560px]">
-              <p className="font-h3 text-[36px] text-black leading-[1.1] tracking-tight">
+            <div className="col-span-1 md:col-span-2 bg-[#C4FF44] rounded-[32px] p-8 md:p-16 flex flex-col justify-between h-auto min-h-[260px] md:h-[560px]">
+              <p className="font-h3 text-[22px] sm:text-[28px] md:text-[36px] text-black leading-[1.1] tracking-tight">
                 "It replaced manual spreadsheet tracking, endless status meetings, and phone calls."
               </p>
             </div>
@@ -839,20 +858,20 @@ export default function LandingPage() {
         </section>
 
         {/* 9. Final CTA */}
-        <section className="px-margin-safe border-t border-white/[0.05] flex flex-col justify-center items-center text-center py-48">
+        <section className="px-margin-safe border-t border-white/[0.05] flex flex-col justify-center items-center text-center py-24 md:py-48">
           <div className="max-w-3xl">
-            <h2 className="font-h1 text-[72px] leading-[1.05] tracking-tight text-on-surface mb-16">Built for smart campuses.<br/>Ready today.</h2>
-            <div className="flex justify-center gap-6">
-              <Link to="/signup" className="bg-white text-black px-10 py-4 rounded-full font-body-lg font-medium shadow-sm hover:scale-105 transition-transform text-[18px]">Get started free</Link>
-              <Link to="/login" className="bg-transparent border border-white/[0.1] text-on-surface px-10 py-4 rounded-full font-body-lg hover:bg-white/5 transition-colors text-[18px]">Admin panel</Link>
+            <h2 className="font-h1 text-[36px] sm:text-[54px] md:text-[72px] leading-[1.05] tracking-tight text-on-surface mb-8 md:mb-16">Built for smart campuses.<br/>Ready today.</h2>
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 max-w-[280px] sm:max-w-none mx-auto w-full">
+              <Link to="/signup" className="w-full sm:w-auto text-center bg-white text-black px-10 py-4 rounded-full font-body-lg font-medium shadow-sm hover:scale-105 transition-transform text-[18px]">Get started free</Link>
+              <Link to="/login" className="w-full sm:w-auto text-center bg-transparent border border-white/[0.1] text-on-surface px-10 py-4 rounded-full font-body-lg hover:bg-white/5 transition-colors text-[18px]">Admin panel</Link>
             </div>
           </div>
         </section>
 
         {/* 10. Footer */}
-        <footer className="bg-[#0a0a0b] border-t border-white/[0.05] flex flex-col justify-between px-margin-safe pt-32 pb-16">
-          <div className="max-w-[1728px] w-full mx-auto grid grid-cols-2 md:grid-cols-6 gap-16 mb-24">
-            <div className="col-span-2 pr-12">
+        <footer className="bg-[#0a0a0b] border-t border-white/[0.05] flex flex-col justify-between px-6 md:px-margin-safe pt-16 md:pt-32 pb-16">
+          <div className="max-w-[1728px] w-full mx-auto grid grid-cols-2 md:grid-cols-6 gap-8 md:gap-16 mb-16 md:mb-24">
+            <div className="col-span-2 pr-0 md:pr-12">
               <div className="flex items-center gap-3 mb-8">
                 <div className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center text-on-surface font-h3 font-bold text-[14px]">S</div>
                 <span className="font-h3 text-[24px] font-bold text-on-surface tracking-tight">SmartCampus</span>
@@ -882,7 +901,7 @@ export default function LandingPage() {
               <Link className="font-body-md text-[15px] text-custom-text-muted hover:text-white transition-colors" to="/student-hub">Student Hub</Link>
             </div>
           </div>
-          <div className="max-w-[1728px] w-full mx-auto flex justify-between items-center border-t border-white/[0.05] pt-12 mt-auto">
+          <div className="max-w-[1728px] w-full mx-auto flex flex-col sm:flex-row gap-6 justify-between items-center border-t border-white/[0.05] pt-12 mt-auto text-center sm:text-left">
             <div className="font-mono-data text-custom-text-muted text-[13px]">© 2026 SmartCampus. All rights reserved.</div>
             <div className="flex gap-8">
               <Link className="font-mono-data text-custom-text-muted text-[13px] hover:text-white transition-colors" to="/privacy-policy">Privacy Policy</Link>
