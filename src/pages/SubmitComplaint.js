@@ -88,7 +88,8 @@ export default function SubmitComplaint() {
   const [voiceText, setVoiceText] = useState('');
   const [voiceProcessing, setVoiceProcessing] = useState(false);
   const [voiceLang, setVoiceLang] = useState('en-IN');
-  const recognitionRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const websocketRef = useRef(null);
 
   const updateField = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -206,62 +207,100 @@ Respond in EXACTLY this JSON format, nothing else:
 
   // ===== VOICE ASSISTANT LOGIC =====
   const startListening = useCallback(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      toast.error('Speech recognition is not supported in your browser. Please use Chrome.');
+    const DEEPGRAM_KEY = process.env.REACT_APP_DEEPGRAM_API_KEY || '';
+    if (!DEEPGRAM_KEY) {
+      toast.error('Deepgram API Key is not configured. Please set REACT_APP_DEEPGRAM_API_KEY in your Vercel environment variables.');
       return;
     }
 
-    const recognition = new SpeechRecognition();
-    // Hint to browser to listen for the selected language
-    recognition.lang = voiceLang; 
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.maxAlternatives = 1;
+    // Determine language prefix (e.g. te-IN -> te, hi-IN -> hi, en-IN -> en)
+    const langCode = voiceLang.split('-')[0];
+    
+    // Connect to Deepgram live transcription WebSocket
+    // Query parameter key is fully supported by browser WebSockets
+    const socket = new WebSocket(`wss://api.deepgram.com/v1/listen?model=nova-3&language=${langCode}&smart_format=true`, [
+      'token',
+      DEEPGRAM_KEY
+    ]);
 
+    websocketRef.current = socket;
     let finalTranscript = '';
 
-    recognition.onresult = (event) => {
-      let interim = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0]?.transcript || '';
-        if (event.results[i].isFinal) {
-          finalTranscript += transcript + ' ';
-        } else {
-          interim += transcript;
+    socket.onopen = async () => {
+      console.log('Deepgram WebSocket connection established.');
+      
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+        // Setup MediaRecorder
+        const options = { mimeType: 'audio/webm' };
+        let mediaRecorder;
+        try {
+          mediaRecorder = new MediaRecorder(stream, options);
+        } catch (e) {
+          mediaRecorder = new MediaRecorder(stream);
+        }
+        
+        mediaRecorderRef.current = mediaRecorder;
+        
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0 && socket.readyState === WebSocket.OPEN) {
+            socket.send(event.data);
+          }
+        };
+        
+        // Capture chunks of 250ms
+        mediaRecorder.start(250);
+        setIsListening(true);
+        setVoiceText('');
+        toast.info('🎙️ Listening via Deepgram... Speak now');
+      } catch (err) {
+        console.error('Failed to access microphone:', err);
+        toast.error('Could not access your microphone.');
+        socket.close();
+      }
+    };
+
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.channel?.alternatives?.[0]) {
+        const transcript = data.channel.alternatives[0].transcript;
+        const isFinal = data.is_final;
+        if (transcript) {
+          if (isFinal) {
+            finalTranscript += transcript + ' ';
+            setVoiceText(finalTranscript);
+          } else {
+            setVoiceText(finalTranscript + transcript);
+          }
         }
       }
-      setVoiceText(finalTranscript + interim);
     };
 
-    recognition.onerror = (event) => {
-      console.error('Speech recognition error:', event.error);
-      if (event.error === 'not-allowed') {
-        toast.error('Microphone access denied. Please allow microphone permission.');
-      } else if (event.error !== 'aborted') {
-        toast.error('Voice recognition error: ' + event.error);
-      }
-      setIsListening(false);
+    socket.onerror = (err) => {
+      console.error('Deepgram WebSocket error:', err);
     };
 
-    recognition.onend = () => {
+    socket.onclose = () => {
+      console.log('Deepgram connection closed.');
       setIsListening(false);
+      
       // Automatically trigger translation in background if we have text
       if (finalTranscript.trim()) {
         processVoiceWithAI(finalTranscript);
       }
     };
 
-    recognitionRef.current = recognition;
-    recognition.start();
-    setIsListening(true);
-    setVoiceText('');
-    toast.info('🎙️ Listening... Speak now');
   }, [voiceLang, processVoiceWithAI]);
 
   const stopListening = useCallback(() => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+    }
+    if (websocketRef.current && websocketRef.current.readyState === WebSocket.OPEN) {
+      websocketRef.current.send(JSON.stringify({ type: 'CloseStream' }));
+      websocketRef.current.close();
     }
     setIsListening(false);
   }, []);
