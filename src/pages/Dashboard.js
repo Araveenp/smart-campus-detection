@@ -131,13 +131,13 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="max-w-[1400px] mx-auto p-4 md:p-6 space-y-8 bg-[#070708]/40 rounded-2xl min-h-screen text-[#e5e2e3]">
+    <div className="max-w-[1400px] mx-auto p-4 md:p-6 space-y-8 bg-transparent dark:bg-[#070708]/40 rounded-2xl min-h-screen text-slate-800 dark:text-[#e5e2e3]">
       
       {/* Welcome Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/[0.05] pb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-200 dark:border-white/[0.05] pb-6">
         <div>
           <motion.h1 
-            className="text-[28px] font-h3 font-bold tracking-tight text-white flex items-center gap-2"
+            className="text-[28px] font-h3 font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2"
             initial={{ opacity: 0, x: -20 }} 
             animate={{ opacity: 1, x: 0 }}
           >
@@ -154,7 +154,7 @@ export default function Dashboard() {
         <div className="flex items-center gap-3">
           <Link 
             to="/submit-complaint" 
-            className="bg-white text-black hover:bg-opacity-90 px-6 py-2.5 rounded-full font-body-md font-bold transition-all hover:scale-[1.02] flex items-center gap-2 shadow-sm"
+            className="bg-primary hover:bg-opacity-90 text-white px-6 py-2.5 rounded-full font-body-md font-bold transition-all hover:scale-[1.02] flex items-center gap-2 shadow-sm"
           >
             <FiPlus className="stroke-[3]" />
             New Complaint
@@ -172,7 +172,7 @@ export default function Dashboard() {
         ].map((stat, i) => (
           <motion.div 
             key={i} 
-            className="bg-[#121315] border border-white/[0.05] rounded-2xl p-6 inner-glow flex items-center gap-5 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1"
+            className="bg-white dark:bg-[#121315] border border-gray-100 dark:border-white/[0.05] rounded-2xl p-6 inner-glow flex items-center gap-5 shadow-sm transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
@@ -181,7 +181,7 @@ export default function Dashboard() {
               {stat.icon}
             </div>
             <div className="space-y-1">
-              <span className="text-[30px] font-bold text-white tracking-tight leading-none block">
+              <span className="text-[30px] font-bold text-slate-900 dark:text-white tracking-tight leading-none block">
                 {stat.value}
               </span>
               <span className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider block">
@@ -194,7 +194,7 @@ export default function Dashboard() {
 
       {/* AI Insight Banner */}
       <motion.div 
-        className="bg-white/[0.02] border border-white/[0.05] rounded-2xl p-5 inner-glow flex items-start md:items-center gap-4 relative overflow-hidden"
+        className="bg-[#6366f1]/5 dark:bg-white/[0.02] border border-[#6366f1]/15 dark:border-white/[0.05] rounded-2xl p-5 inner-glow flex items-start md:items-center gap-4 relative overflow-hidden"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
@@ -203,7 +203,7 @@ export default function Dashboard() {
           <FiCpu />
         </div>
         <div className="text-body-md text-custom-text-muted leading-relaxed">
-          <strong className="text-white">SmartCampus Intelligence:</strong> {stats.highPriority} high-priority issues detected. 
+          <strong className="text-slate-900 dark:text-white">SmartCampus Intelligence:</strong> {stats.highPriority} high-priority issues detected. 
           {stats.open > 0 ? ` ${stats.open} complaints are awaiting immediate triage.` : ' All campus issues are currently stable.'} 
           {' '}Most reported category: <strong className="text-secondary">
             {(() => {
@@ -219,8 +219,8 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
         {/* Category Distribution */}
-        <div className="bg-[#121315] border border-white/[0.05] rounded-2xl p-6 inner-glow flex flex-col h-[380px]">
-          <h3 className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider mb-6 pb-2 border-b border-white/[0.03]">Category Distribution</h3>
+        <div className="bg-white dark:bg-[#121315] border border-gray-100 dark:border-white/[0.05] rounded-2xl p-6 shadow-sm flex flex-col h-[380px]">
+          <h3 className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider mb-6 pb-2 border-b border-gray-100 dark:border-white/[0.03]">Category Distribution</h3>
           <div className="flex-1 relative flex items-center justify-center">
             {stats.total > 0 ? (
               <Doughnut data={categoryData()} options={doughnutOptions} />
@@ -231,19 +231,19 @@ export default function Dashboard() {
         </div>
 
         {/* Complaint Trend */}
-        <div className="bg-[#121315] border border-white/[0.05] rounded-2xl p-6 inner-glow flex flex-col h-[380px]">
-          <h3 className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider mb-6 pb-2 border-b border-white/[0.03]">Complaint Trend (This Week)</h3>
+        <div className="bg-white dark:bg-[#121315] border border-gray-100 dark:border-white/[0.05] rounded-2xl p-6 shadow-sm flex flex-col h-[380px]">
+          <h3 className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider mb-6 pb-2 border-b border-gray-100 dark:border-white/[0.03]">Complaint Trend (This Week)</h3>
           <div className="flex-1 relative">
             <Line data={trendData} options={chartOptions} />
           </div>
         </div>
 
         {/* Priority Breakdown */}
-        <div className="bg-[#121315] border border-white/[0.05] rounded-2xl p-6 inner-glow flex flex-col h-[380px]">
-          <h3 className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider mb-6 pb-2 border-b border-white/[0.03]">Priority Breakdown</h3>
+        <div className="bg-white dark:bg-[#121315] border border-gray-100 dark:border-white/[0.05] rounded-2xl p-6 shadow-sm flex flex-col h-[380px]">
+          <h3 className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider mb-6 pb-2 border-b border-gray-100 dark:border-white/[0.03]">Priority Breakdown</h3>
           <div className="flex-1 relative flex items-center justify-center">
             {stats.total > 0 ? (
-              <Doughnut data={priorityData} options={doughnutOptions} />
+              <Doughnut data={priorityData()} options={doughnutOptions} />
             ) : (
               <p className="text-custom-text-muted text-body-md">No telemetry data available.</p>
             )}
@@ -251,8 +251,8 @@ export default function Dashboard() {
         </div>
 
         {/* Complaints by Category */}
-        <div className="bg-[#121315] border border-white/[0.05] rounded-2xl p-6 inner-glow flex flex-col h-[380px]">
-          <h3 className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider mb-6 pb-2 border-b border-white/[0.03]">Complaints by Category</h3>
+        <div className="bg-white dark:bg-[#121315] border border-gray-100 dark:border-white/[0.05] rounded-2xl p-6 shadow-sm flex flex-col h-[380px]">
+          <h3 className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider mb-6 pb-2 border-b border-gray-100 dark:border-white/[0.03]">Complaints by Category</h3>
           <div className="flex-1 relative">
             {stats.total > 0 ? (
               <Bar data={barData()} options={chartOptions} />
@@ -264,10 +264,10 @@ export default function Dashboard() {
       </div>
 
       {/* Recent Complaints */}
-      <div className="bg-[#121315] border border-white/[0.05] rounded-2xl p-6 inner-glow">
-        <div className="flex justify-between items-center mb-6 border-b border-white/[0.03] pb-4">
+      <div className="bg-white dark:bg-[#121315] border border-gray-100 dark:border-white/[0.05] rounded-2xl p-6 shadow-sm">
+        <div className="flex justify-between items-center mb-6 border-b border-gray-100 dark:border-white/[0.03] pb-4">
           <h3 className="text-[13px] font-bold text-custom-text-muted uppercase tracking-wider">Recent Complaints</h3>
-          <Link to="/complaints" className="text-[13px] font-bold text-primary hover:text-white flex items-center gap-1 transition-colors">
+          <Link to="/complaints" className="text-[13px] font-bold text-primary hover:text-opacity-80 flex items-center gap-1 transition-colors">
             View All
             <FiArrowRight />
           </Link>
@@ -277,7 +277,7 @@ export default function Dashboard() {
           {recentComplaints.length > 0 ? (
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-white/[0.05] text-[11px] text-custom-text-muted font-bold uppercase tracking-wider">
+                <tr className="border-b border-gray-100 dark:border-white/[0.05] text-[11px] text-custom-text-muted font-bold uppercase tracking-wider">
                   <th className="py-4 px-3">ID</th>
                   <th className="py-4 px-3">Title</th>
                   <th className="py-4 px-3">Category</th>
@@ -287,15 +287,15 @@ export default function Dashboard() {
                   <th className="py-4 px-3">Date</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.02]">
+              <tbody className="divide-y divide-gray-100 dark:divide-white/[0.02]">
                 {recentComplaints.map(c => (
-                  <tr key={c.id} className="hover:bg-white/[0.01] transition-all text-body-md">
+                  <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.01] transition-all text-body-md">
                     <td className="py-4 px-3">
-                      <Link to={`/complaint/${c.id}`} className="text-primary hover:text-white font-bold font-mono-data">
+                      <Link to={`/complaint/${c.id}`} className="text-primary hover:underline font-bold font-mono-data">
                         #{c.id.slice(0, 6)}
                       </Link>
                     </td>
-                    <td className="py-4 px-3 font-medium text-white max-w-[200px] truncate">{c.title}</td>
+                    <td className="py-4 px-3 font-medium text-slate-800 dark:text-white max-w-[200px] truncate">{c.title}</td>
                     <td className="py-4 px-3">
                       <span className="inline-block px-2.5 py-1 bg-primary/10 border border-primary/20 text-primary rounded-full text-[11px] font-semibold">
                         {c.category}
@@ -326,7 +326,7 @@ export default function Dashboard() {
                     </td>
                     <td className="py-4 px-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-16 bg-white/[0.04] h-1.5 rounded-full overflow-hidden">
+                        <div className="w-16 bg-gray-100 dark:bg-white/[0.04] h-1.5 rounded-full overflow-hidden">
                           <div className="h-full bg-gradient-to-r from-primary to-secondary rounded-full" style={{ width: `${c.confidence}%` }}></div>
                         </div>
                         <span className="font-mono-data text-[12px] font-bold text-primary">{c.confidence}%</span>

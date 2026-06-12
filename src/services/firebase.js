@@ -10,6 +10,7 @@
 
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, get, set, push, update, remove, onValue } from 'firebase/database';
+import { getAuth, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: "AIzaSyBSIm8GHueFZc0Uw_z6SnoWmTsCLH38xYI",
@@ -24,6 +25,13 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+export const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
+
+export async function fbLoginWithGoogle() {
+  const result = await signInWithPopup(auth, googleProvider);
+  return result.user;
+}
 
 // ── Database References ──────────────────────────────
 export const usersRef = ref(db, 'users');

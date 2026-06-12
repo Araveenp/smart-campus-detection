@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import '../styles/landing.css';
 
 export default function LandingPage() {
   const [currentDate, setCurrentDate] = useState('');
   const [currentTime, setCurrentTime] = useState('');
+  const [activeMockTab, setActiveMockTab] = useState('Overview');
+  const mockDashboardRef = useRef(null);
+  const location = useLocation();
 
   useEffect(() => {
     const updateTime = () => {
@@ -23,6 +26,24 @@ export default function LandingPage() {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (location.state && location.state.activeTab) {
+      setActiveMockTab(location.state.activeTab);
+      setTimeout(() => {
+        if (mockDashboardRef.current) {
+          mockDashboardRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    }
+  }, [location]);
+
+  const handleMockNavClick = (tab) => {
+    setActiveMockTab(tab);
+    if (mockDashboardRef.current) {
+      mockDashboardRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="font-body-md antialiased selection:bg-custom-btn-primary selection:text-white bg-[#070708] text-[#e5e2e3] min-h-screen">
       {/* 1. Fixed Header */}
@@ -33,10 +54,10 @@ export default function LandingPage() {
             <span className="font-h3 text-h3 font-bold tracking-tight text-on-surface">SmartCampus</span>
           </div>
           <nav className="hidden md:flex gap-10 h-full items-center">
-            <Link className="font-body-md text-body-md text-on-surface hover:text-white transition-colors duration-200 opacity-100" to="/">Platform</Link>
-            <Link className="font-body-md text-body-md text-custom-text-muted hover:text-on-surface transition-colors duration-200" to="/dashboard">Dashboard</Link>
-            <Link className="font-body-md text-body-md text-custom-text-muted hover:text-on-surface transition-colors duration-200" to="/heatmap">Heatmap</Link>
-            <Link className="font-body-md text-body-md text-custom-text-muted hover:text-on-surface transition-colors duration-200" to="/leaderboard">Leaderboard</Link>
+            <button className="font-body-md text-body-md text-custom-text-muted hover:text-white transition-colors duration-200" onClick={() => handleMockNavClick('Overview')}>Platform</button>
+            <button className="font-body-md text-body-md text-custom-text-muted hover:text-white transition-colors duration-200" onClick={() => handleMockNavClick('Overview')}>Dashboard</button>
+            <button className="font-body-md text-body-md text-custom-text-muted hover:text-white transition-colors duration-200" onClick={() => handleMockNavClick('Campus Heatmap')}>Heatmap</button>
+            <button className="font-body-md text-body-md text-custom-text-muted hover:text-white transition-colors duration-200" onClick={() => handleMockNavClick('Leaderboard')}>Leaderboard</button>
           </nav>
           <div className="flex gap-6 items-center">
             <Link className="font-body-md text-body-md text-custom-text-muted hover:text-on-surface transition-colors duration-200" to="/login">Log in</Link>
@@ -77,175 +98,478 @@ export default function LandingPage() {
             </div>
 
             {/* Hero Dashboard Mockup */}
-            <div className="w-full bg-[#0a0a0b] rounded-2xl border border-white/[0.08] overflow-hidden flex h-[720px] inner-glow shadow-2xl relative shadow-black/50">
+            <div ref={mockDashboardRef} className="w-full bg-[#0a0a0b] rounded-2xl border border-white/[0.08] overflow-hidden flex h-[720px] inner-glow shadow-2xl relative shadow-black/50">
               
               {/* Sidebar */}
               <div className="w-72 bg-[#0d0e0f] border-r border-white/[0.05] p-8 flex flex-col gap-6">
                 <div className="text-[11px] text-custom-text-muted uppercase tracking-[0.2em] mb-4 px-2 opacity-50 font-bold">Navigation</div>
                 <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-4 px-4 py-3 bg-white/[0.06] rounded-xl text-on-surface font-medium cursor-pointer transition-colors shadow-sm inner-glow">
+                  <button 
+                    onClick={() => setActiveMockTab('Overview')}
+                    className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors cursor-pointer text-left ${activeMockTab === 'Overview' ? 'bg-white/[0.06] text-on-surface font-medium shadow-sm inner-glow' : 'text-custom-text-muted hover:text-on-surface hover:bg-white/[0.03]'}`}
+                  >
                     <span className="material-symbols-outlined text-[20px]">grid_view</span>
                     <span className="text-body-md">Overview</span>
-                  </div>
-                  <div className="flex items-center gap-4 px-4 py-3 text-custom-text-muted hover:text-on-surface hover:bg-white/[0.03] rounded-xl cursor-pointer transition-colors group">
-                    <span className="material-symbols-outlined text-[20px] opacity-50 group-hover:opacity-100 transition-opacity">sensors</span>
+                  </button>
+                  <button 
+                    onClick={() => setActiveMockTab('Live Signals')}
+                    className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors cursor-pointer text-left ${activeMockTab === 'Live Signals' ? 'bg-white/[0.06] text-on-surface font-medium shadow-sm inner-glow' : 'text-custom-text-muted hover:text-on-surface hover:bg-white/[0.03]'}`}
+                  >
+                    <span className="material-symbols-outlined text-[20px]">sensors</span>
                     <span className="text-body-md">Live Signals</span>
-                  </div>
-                  <div className="flex items-center gap-4 px-4 py-3 text-custom-text-muted hover:text-on-surface hover:bg-white/[0.03] rounded-xl cursor-pointer transition-colors group">
-                    <span className="material-symbols-outlined text-[20px] opacity-50 group-hover:opacity-100 transition-opacity">check_circle</span>
+                  </button>
+                  <button 
+                    onClick={() => setActiveMockTab('AI Resolutions')}
+                    className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors cursor-pointer text-left ${activeMockTab === 'AI Resolutions' ? 'bg-white/[0.06] text-on-surface font-medium shadow-sm inner-glow' : 'text-custom-text-muted hover:text-on-surface hover:bg-white/[0.03]'}`}
+                  >
+                    <span className="material-symbols-outlined text-[20px]">check_circle</span>
                     <span className="text-body-md">AI Resolutions</span>
-                  </div>
-                  <div className="flex items-center gap-4 px-4 py-3 text-custom-text-muted hover:text-on-surface hover:bg-white/[0.03] rounded-xl cursor-pointer transition-colors group">
-                    <span className="material-symbols-outlined text-[20px] opacity-50 group-hover:opacity-100 transition-opacity">bar_chart</span>
+                  </button>
+                  <button 
+                    onClick={() => setActiveMockTab('Analytics')}
+                    className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors cursor-pointer text-left ${activeMockTab === 'Analytics' ? 'bg-white/[0.06] text-on-surface font-medium shadow-sm inner-glow' : 'text-custom-text-muted hover:text-on-surface hover:bg-white/[0.03]'}`}
+                  >
+                    <span className="material-symbols-outlined text-[20px]">bar_chart</span>
                     <span className="text-body-md">Analytics</span>
-                  </div>
-                  <div className="flex items-center gap-4 px-4 py-3 text-custom-text-muted hover:text-on-surface hover:bg-white/[0.03] rounded-xl cursor-pointer transition-colors group">
-                    <span class="material-symbols-outlined text-[20px] opacity-50 group-hover:opacity-100 transition-opacity">map</span>
+                  </button>
+                  <button 
+                    onClick={() => setActiveMockTab('Campus Heatmap')}
+                    className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors cursor-pointer text-left ${activeMockTab === 'Campus Heatmap' ? 'bg-white/[0.06] text-on-surface font-medium shadow-sm inner-glow' : 'text-custom-text-muted hover:text-on-surface hover:bg-white/[0.03]'}`}
+                  >
+                    <span className="material-symbols-outlined text-[20px]">map</span>
                     <span className="text-body-md">Heatmap</span>
-                  </div>
+                  </button>
                   <div className="mt-6 flex flex-col gap-2 pt-6 border-t border-white/[0.05]">
-                    <div className="flex items-center gap-4 px-4 py-3 text-custom-text-muted hover:text-on-surface hover:bg-white/[0.03] rounded-xl cursor-pointer transition-colors group">
-                      <span className="material-symbols-outlined text-[20px] opacity-50 group-hover:opacity-100 transition-opacity">group</span>
+                    <button 
+                      onClick={() => setActiveMockTab('Admins')}
+                      className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors cursor-pointer text-left ${activeMockTab === 'Admins' ? 'bg-white/[0.06] text-on-surface font-medium shadow-sm inner-glow' : 'text-custom-text-muted hover:text-on-surface hover:bg-white/[0.03]'}`}
+                    >
+                      <span className="material-symbols-outlined text-[20px]">group</span>
                       <span className="text-body-md">Admins</span>
-                    </div>
-                    <div className="flex items-center gap-4 px-4 py-3 text-custom-text-muted hover:text-on-surface hover:bg-white/[0.03] rounded-xl cursor-pointer transition-colors group">
-                      <span className="material-symbols-outlined text-[20px] opacity-50 group-hover:opacity-100 transition-opacity">leaderboard</span>
+                    </button>
+                    <button 
+                      onClick={() => setActiveMockTab('Leaderboard')}
+                      className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors cursor-pointer text-left ${activeMockTab === 'Leaderboard' ? 'bg-white/[0.06] text-on-surface font-medium shadow-sm inner-glow' : 'text-custom-text-muted hover:text-on-surface hover:bg-white/[0.03]'}`}
+                    >
+                      <span className="material-symbols-outlined text-[20px]">leaderboard</span>
                       <span className="text-body-md">Leaderboard</span>
-                    </div>
+                    </button>
                   </div>
                 </div>
               </div>
 
               {/* Center Area */}
               <div className="flex-1 p-10 flex flex-col gap-10 bg-[#0a0a0b] relative overflow-y-auto">
-                <div className="grid grid-cols-4 gap-8">
-                  
-                  {/* Dynamic Date - Highly Enlarged Operational Widget */}
-                  <div className="bg-[#121315] border border-white/[0.05] rounded-2xl p-6 inner-glow flex flex-col justify-between">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="text-[11px] text-custom-text-muted font-bold uppercase tracking-widest opacity-70">SYSTEM DATE</div>
-                    </div>
-                    <div className="font-h3 text-[20px] leading-tight text-primary font-bold tracking-tight uppercase mt-2">
-                      {currentDate || 'LOADING...'}
-                    </div>
-                    <div className="text-[12px] text-secondary font-medium mt-4 pt-4 border-t border-white/[0.05] flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-[16px] animate-pulse">schedule</span>
-                      {currentTime || 'Syncing...'}
-                    </div>
-                  </div>
+                
+                {/* 1. Render Overview View */}
+                {activeMockTab === 'Overview' && (
+                  <>
+                    <div className="grid grid-cols-4 gap-8">
+                      {/* System Date Card */}
+                      <div className="bg-[#121315] border border-white/[0.05] rounded-2xl p-6 inner-glow flex flex-col justify-between">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="text-[11px] text-custom-text-muted font-bold uppercase tracking-widest opacity-70">SYSTEM DATE</div>
+                        </div>
+                        <div className="font-h3 text-[20px] leading-tight text-primary font-bold tracking-tight uppercase mt-2">
+                          {currentDate || 'LOADING...'}
+                        </div>
+                        <div className="text-[12px] text-secondary font-medium mt-4 pt-4 border-t border-white/[0.05] flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-[16px] animate-pulse">schedule</span>
+                          {currentTime || 'Syncing...'}
+                        </div>
+                      </div>
 
-                  {/* Open Approvals / Complaints */}
-                  <div className="bg-[#121315] border border-white/[0.05] rounded-2xl p-6 inner-glow">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="text-[11px] text-custom-text-muted font-bold uppercase tracking-widest opacity-70">ACTIVE COMPLAINTS</div>
-                    </div>
-                    <div className="font-h3 text-[32px] leading-tight text-on-surface font-bold tracking-tight">14</div>
-                    <div className="text-[12px] text-tertiary font-medium mt-4 pt-4 border-t border-white/[0.05]">3 requiring immediate attention</div>
-                  </div>
+                      {/* Open Approvals / Complaints */}
+                      <div className="bg-[#121315] border border-white/[0.05] rounded-2xl p-6 inner-glow">
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="text-[11px] text-custom-text-muted font-bold uppercase tracking-widest opacity-70">ACTIVE COMPLAINTS</div>
+                        </div>
+                        <div className="font-h3 text-[32px] leading-tight text-on-surface font-bold tracking-tight">14</div>
+                        <div className="text-[12px] text-tertiary font-medium mt-4 pt-4 border-t border-white/[0.05]">3 requiring immediate attention</div>
+                      </div>
 
-                  {/* System Risk Index */}
-                  <div className="bg-[#121315] border border-white/[0.05] rounded-2xl p-6 inner-glow">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="text-[11px] text-custom-text-muted font-bold uppercase tracking-widest opacity-70">SYSTEM STATUS</div>
-                    </div>
-                    <div className="font-h3 text-[32px] leading-tight text-on-surface font-bold uppercase tracking-tight">STABLE</div>
-                    <div className="text-[12px] text-[#E5FD17] font-medium mt-4 pt-4 border-t border-white/[0.05] flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#E5FD17] animate-pulse"></span>
-                      All AI nodes healthy
-                    </div>
-                  </div>
+                      {/* System Risk Index */}
+                      <div className="bg-[#121315] border border-white/[0.05] rounded-2xl p-6 inner-glow">
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="text-[11px] text-custom-text-muted font-bold uppercase tracking-widest opacity-70">SYSTEM STATUS</div>
+                        </div>
+                        <div className="font-h3 text-[32px] leading-tight text-on-surface font-bold uppercase tracking-tight">STABLE</div>
+                        <div className="text-[12px] text-[#E5FD17] font-medium mt-4 pt-4 border-t border-white/[0.05] flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#E5FD17] animate-pulse"></span>
+                          All AI nodes healthy
+                        </div>
+                      </div>
 
-                  {/* AI Pacing/Accuracy */}
-                  <div className="bg-[#121315] border border-white/[0.05] rounded-2xl p-6 inner-glow">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="text-[11px] text-custom-text-muted font-bold uppercase tracking-widest opacity-70">AI CLASSIFICATION</div>
+                      {/* AI Pacing/Accuracy */}
+                      <div className="bg-[#121315] border border-white/[0.05] rounded-2xl p-6 inner-glow">
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="text-[11px] text-custom-text-muted font-bold uppercase tracking-widest opacity-70">AI CLASSIFICATION</div>
+                        </div>
+                        <div className="font-h3 text-[32px] leading-tight text-on-surface font-bold tracking-tight">95%</div>
+                        <div className="text-[12px] text-custom-text-muted font-medium mt-4 pt-4 border-t border-white/[0.05]">Avg validation score</div>
+                      </div>
                     </div>
-                    <div className="font-h3 text-[32px] leading-tight text-on-surface font-bold tracking-tight">95%</div>
-                    <div className="text-[12px] text-custom-text-muted font-medium mt-4 pt-4 border-t border-white/[0.05]">Avg validation score</div>
-                  </div>
-                </div>
 
-                {/* Live Signal Wave */}
-                <div className="bg-[#121315] border border-white/[0.05] rounded-2xl p-6 inner-glow flex flex-col h-[280px]">
-                  <div className="flex justify-between items-center mb-8 px-2">
-                    <div className="flex items-center gap-6">
-                      <div className="text-[12px] font-bold text-on-surface uppercase tracking-widest opacity-70">Campus Operations Flow</div>
-                      <div className="font-mono-data text-[10px] text-primary/50 uppercase tracking-tighter bg-primary/10 px-2 py-1 rounded">[LATENCY: 45ms]</div>
+                    {/* Live Signal Wave */}
+                    <div className="bg-[#121315] border border-white/[0.05] rounded-2xl p-6 inner-glow flex flex-col h-[280px]">
+                      <div className="flex justify-between items-center mb-8 px-2">
+                        <div className="flex items-center gap-6">
+                          <div className="text-[12px] font-bold text-on-surface uppercase tracking-widest opacity-70">Campus Operations Flow</div>
+                          <div className="font-mono-data text-[10px] text-primary/50 uppercase tracking-tighter bg-primary/10 px-2 py-1 rounded">[LATENCY: 45ms]</div>
+                        </div>
+                        <div className="flex gap-6 text-[11px] text-custom-text-muted font-bold uppercase tracking-wider">
+                          <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_#bec2ff]"></span>Incoming Signals</span>
+                          <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-white/30"></span>Goal Resolution</span>
+                        </div>
+                      </div>
+                      <div className="flex-1 rounded-xl bg-[#070708]/80 border border-white/[0.03] relative overflow-hidden">
+                        {/* Faint Horizontal Grid Lines */}
+                        <div className="absolute inset-0 flex flex-col justify-between py-4 opacity-[0.03]">
+                          <div className="border-t border-white w-full"></div>
+                          <div className="border-t border-white w-full"></div>
+                          <div className="border-t border-white w-full"></div>
+                          <div className="border-t border-white w-full"></div>
+                        </div>
+                        {/* Vertical Grid */}
+                        <div className="absolute inset-0 grid grid-cols-6 h-full w-full opacity-[0.03]">
+                          <div className="border-r border-white"></div>
+                          <div className="border-r border-white"></div>
+                          <div className="border-r border-white"></div>
+                          <div className="border-r border-white"></div>
+                          <div className="border-r border-white"></div>
+                        </div>
+                        <svg className="absolute bottom-0 w-full h-[85%]" preserveAspectRatio="none" viewBox="0 0 100 100">
+                          <defs>
+                            <linearGradient id="gradient-flow-v3" x1="0%" x2="0%" y1="0%" y2="100%">
+                              <stop offset="0%" stopColor="#5E6BFF" stopOpacity="0.2"></stop>
+                              <stop offset="100%" stopColor="#5E6BFF" stopOpacity="0"></stop>
+                            </linearGradient>
+                            <filter height="140%" id="glow" width="140%" x="-20%" y="-20%">
+                              <feGaussianBlur result="blur" stdDeviation="1"></feGaussianBlur>
+                              <feComposite in="SourceGraphic" in2="blur" operator="over"></feComposite>
+                            </filter>
+                          </defs>
+                          <path d="M0,80 C20,78 35,85 50,65 C65,45 80,30 100,25 L100,100 L0,100 Z" fill="url(#gradient-flow-v3)"></path>
+                          <path d="M0,80 C20,78 35,85 50,65 C65,45 80,30 100,25" fill="none" filter="url(#glow)" stroke="#5E6BFF" strokeLinecap="round" strokeWidth="0.75"></path>
+                          <circle cx="20" cy="78" fill="#5E6BFF" r="1.5"></circle>
+                          <circle cx="50" cy="65" fill="white" r="2" stroke="#5E6BFF" stroke-width="1"></circle>
+                          <circle cx="80" cy="30" fill="#5E6BFF" r="1.5"></circle>
+                        </svg>
+                        <div className="absolute bottom-2 right-3 font-mono-data text-[9px] text-custom-text-muted/40 uppercase">t: 100.2s</div>
+                        <div className="absolute top-3 left-3 font-mono-data text-[9px] text-custom-text-muted/40 uppercase">y: Signals</div>
+                      </div>
                     </div>
-                    <div className="flex gap-6 text-[11px] text-custom-text-muted font-bold uppercase tracking-wider">
-                      <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_#bec2ff]"></span>Incoming Signals</span>
-                      <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-white/30"></span>Goal Resolution</span>
-                    </div>
-                  </div>
-                  <div className="flex-1 rounded-xl bg-[#070708]/80 border border-white/[0.03] relative overflow-hidden">
-                    {/* Faint Horizontal Grid Lines */}
-                    <div className="absolute inset-0 flex flex-col justify-between py-4 opacity-[0.03]">
-                      <div className="border-t border-white w-full"></div>
-                      <div className="border-t border-white w-full"></div>
-                      <div className="border-t border-white w-full"></div>
-                      <div className="border-t border-white w-full"></div>
-                    </div>
-                    {/* Vertical Grid */}
-                    <div className="absolute inset-0 grid grid-cols-6 h-full w-full opacity-[0.03]">
-                      <div className="border-r border-white"></div>
-                      <div className="border-r border-white"></div>
-                      <div className="border-r border-white"></div>
-                      <div className="border-r border-white"></div>
-                      <div className="border-r border-white"></div>
-                    </div>
-                    <svg className="absolute bottom-0 w-full h-[85%]" preserveAspectRatio="none" viewBox="0 0 100 100">
-                      <defs>
-                        <linearGradient id="gradient-flow-v3" x1="0%" x2="0%" y1="0%" y2="100%">
-                          <stop offset="0%" stopColor="#5E6BFF" stopOpacity="0.2"></stop>
-                          <stop offset="100%" stopColor="#5E6BFF" stopOpacity="0"></stop>
-                        </linearGradient>
-                        <filter height="140%" id="glow" width="140%" x="-20%" y="-20%">
-                          <feGaussianBlur result="blur" stdDeviation="1"></feGaussianBlur>
-                          <feComposite in="SourceGraphic" in2="blur" operator="over"></feComposite>
-                        </filter>
-                      </defs>
-                      {/* Area Fill */}
-                      <path d="M0,80 C20,78 35,85 50,65 C65,45 80,30 100,25 L100,100 L0,100 Z" fill="url(#gradient-flow-v3)"></path>
-                      {/* Main Line */}
-                      <path d="M0,80 C20,78 35,85 50,65 C65,45 80,30 100,25" fill="none" filter="url(#glow)" stroke="#5E6BFF" strokeLinecap="round" strokeWidth="0.75"></path>
-                      {/* Data Points */}
-                      <circle cx="20" cy="78" fill="#5E6BFF" r="1.5"></circle>
-                      <circle cx="50" cy="65" fill="white" r="2" stroke="#5E6BFF" strokeWidth="1"></circle>
-                      <circle cx="80" cy="30" fill="#5E6BFF" r="1.5"></circle>
-                    </svg>
-                    {/* Axis Labels */}
-                    <div className="absolute bottom-2 right-3 font-mono-data text-[9px] text-custom-text-muted/40 uppercase">t: 100.2s</div>
-                    <div className="absolute top-3 left-3 font-mono-data text-[9px] text-custom-text-muted/40 uppercase">y: Signals</div>
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-8">
-                  <div className="bg-[#121315] border border-white/[0.05] rounded-2xl p-6 inner-glow">
-                    <div className="text-body-md font-bold text-on-surface border-b border-white/[0.05] pb-4 mb-4">Focus queue</div>
+                    <div className="grid grid-cols-2 gap-8">
+                      <div className="bg-[#121315] border border-white/[0.05] rounded-2xl p-6 inner-glow">
+                        <div className="text-body-md font-bold text-on-surface border-b border-white/[0.05] pb-4 mb-4">Focus queue</div>
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-center text-body-md">
+                            <span className="text-on-surface">Resolve Hostel Water Leakage</span>
+                            <span className="text-tertiary bg-tertiary/10 px-2.5 py-1 rounded text-[11px] font-bold tracking-wider">URGENT</span>
+                          </div>
+                          <div className="flex justify-between items-center text-body-md">
+                            <span className="text-on-surface">Approve Lab AC Replacement</span>
+                            <span className="text-custom-text-muted text-[11px] font-medium tracking-wider">TODAY</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="bg-[#121315] border border-white/[0.05] rounded-2xl p-6 inner-glow">
+                        <div className="text-body-md font-bold text-on-surface border-b border-white/[0.05] pb-4 mb-4">Resolution pipeline</div>
+                        <div className="space-y-4 pt-2">
+                          <div className="h-2 bg-white/[0.04] rounded-full w-full overflow-hidden">
+                            <div className="h-full bg-primary rounded-full w-3/4"></div>
+                          </div>
+                          <div className="text-label-sm text-custom-text-muted flex justify-between items-center">
+                            <span className="font-medium">75% resolved this week</span>
+                            <span className="text-primary font-bold">12/16</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* 2. Render Live Signals Mock View */}
+                {activeMockTab === 'Live Signals' && (
+                  <div className="flex flex-col gap-6 w-full text-[#e5e2e3]">
+                    <div className="flex justify-between items-center pb-4 border-b border-white/[0.05]">
+                      <div>
+                        <h3 className="text-[18px] font-bold text-white">Live Telemetry Signals</h3>
+                        <p className="text-[12px] text-custom-text-muted mt-1">Real-time anomaly stream from IoT and student reports</p>
+                      </div>
+                      <span className="font-mono bg-secondary/15 text-secondary border border-secondary/20 px-3 py-1 rounded-full text-[11px] animate-pulse">STREAM ACTIVE</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                      <div className="bg-[#121315] border border-white/[0.05] rounded-xl p-5 inner-glow">
+                        <span className="text-[10px] text-custom-text-muted font-bold tracking-wider uppercase block mb-1">NOISE LOGS</span>
+                        <span className="text-[20px] font-bold text-white font-mono-data">324 p/m</span>
+                      </div>
+                      <div className="bg-[#121315] border border-white/[0.05] rounded-xl p-5 inner-glow">
+                        <span className="text-[10px] text-custom-text-muted font-bold tracking-wider uppercase block mb-1">DETECTION CONFIDENCE</span>
+                        <span className="text-[20px] font-bold text-secondary font-mono-data">94.8%</span>
+                      </div>
+                      <div className="bg-[#121315] border border-white/[0.05] rounded-xl p-5 inner-glow">
+                        <span className="text-[10px] text-custom-text-muted font-bold tracking-wider uppercase block mb-1">ACTIVE CHANNELS</span>
+                        <span className="text-[20px] font-bold text-primary font-mono-data">12 / 12</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-[#121315] border border-white/[0.05] rounded-xl p-6 inner-glow flex-1">
+                      <h4 className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider mb-4">Real-Time Event Stream</h4>
+                      <div className="space-y-3 font-mono-data text-[12px]">
+                        <div className="flex gap-4 text-error bg-error/5 p-2 rounded border border-error/10">
+                          <span className="text-custom-text-muted">19:42:01</span>
+                          <span className="font-bold">[ANOMALY]</span>
+                          <span>PRESSURE DROP: HOSTEL B PLUMBING LINE (92% Conf.)</span>
+                        </div>
+                        <div className="flex gap-4 text-secondary bg-secondary/5 p-2 rounded border border-secondary/10">
+                          <span className="text-custom-text-muted">19:39:15</span>
+                          <span className="font-bold">[ROUTING]</span>
+                          <span>ROUTED TICKET #2847 TO ELECTRICAL DIVISION</span>
+                        </div>
+                        <div className="flex gap-4 text-custom-text-muted bg-white/[0.01] p-2 rounded">
+                          <span className="text-custom-text-muted">19:35:42</span>
+                          <span className="font-bold">[TELEMETRY]</span>
+                          <span>ROUTINE CHECK: AC TEMPERATURE CONTROL STABLE</span>
+                        </div>
+                        <div className="flex gap-4 text-custom-text-muted bg-white/[0.01] p-2 rounded">
+                          <span className="text-custom-text-muted">19:31:10</span>
+                          <span className="font-bold">[TELEMETRY]</span>
+                          <span>BANDWIDTH TRAFFIC IN LIBRARY STABLE (240 Mbps)</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. Render AI Resolutions Mock View */}
+                {activeMockTab === 'AI Resolutions' && (
+                  <div className="flex flex-col gap-6 w-full text-[#e5e2e3]">
+                    <div className="flex justify-between items-center pb-4 border-b border-white/[0.05]">
+                      <div>
+                        <h3 className="text-[18px] font-bold text-white">AI Automated Resolutions</h3>
+                        <p className="text-[12px] text-custom-text-muted mt-1">Action plans generated from Retrieval-Augmented Generation (RAG)</p>
+                      </div>
+                      <span className="font-mono bg-primary/15 text-primary border border-primary/20 px-3 py-1 rounded-full text-[11px]">RAG ACTIVE</span>
+                    </div>
+
                     <div className="space-y-4">
-                      <div className="flex justify-between items-center text-body-md">
-                        <span className="text-on-surface">Resolve Hostel Water Leakage</span>
-                        <span className="text-tertiary bg-tertiary/10 px-2.5 py-1 rounded text-[11px] font-bold tracking-wider">URGENT</span>
+                      <div className="bg-[#121315] border border-white/[0.05] rounded-xl p-5 inner-glow">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <span className="text-[10px] text-custom-text-muted font-bold font-mono">CASE #88492 // resolved</span>
+                            <h4 className="text-[15px] font-bold text-white mt-1">Water Supply Failure in Hostel Block B</h4>
+                          </div>
+                          <span className="bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">SOP 23B Triggered</span>
+                        </div>
+                        <p className="text-[13px] text-custom-text-muted leading-relaxed">
+                          AI successfully indexed SOP 23B (Utility Failure Protocols). Generated a 5-step action plan, dispatched work orders, and notified the maintenance admin.
+                        </p>
                       </div>
-                      <div className="flex justify-between items-center text-body-md">
-                        <span className="text-on-surface">Approve Lab AC Replacement</span>
-                        <span className="text-custom-text-muted text-[11px] font-medium tracking-wider">TODAY</span>
+
+                      <div className="bg-[#121315] border border-white/[0.05] rounded-xl p-5 inner-glow">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <span className="text-[10px] text-custom-text-muted font-bold font-mono">CASE #88491 // resolved</span>
+                            <h4 className="text-[15px] font-bold text-white mt-1">Wi-Fi Interruption in Science Block</h4>
+                          </div>
+                          <span className="bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">SOP 12 Triggered</span>
+                        </div>
+                        <p className="text-[13px] text-custom-text-muted leading-relaxed">
+                          RAG fetched "IT Network Reset SOP". Automatically initiated router reset script and successfully resolved channel conflict, restoring bandwidth.
+                        </p>
                       </div>
                     </div>
                   </div>
-                  <div className="bg-[#121315] border border-white/[0.05] rounded-2xl p-6 inner-glow">
-                    <div className="text-body-md font-bold text-on-surface border-b border-white/[0.05] pb-4 mb-4">Resolution pipeline</div>
-                    <div className="space-y-4 pt-2">
-                      <div className="h-2 bg-white/[0.04] rounded-full w-full overflow-hidden">
-                        <div className="h-full bg-primary rounded-full w-3/4"></div>
+                )}
+
+                {/* 4. Render Analytics Mock View */}
+                {activeMockTab === 'Analytics' && (
+                  <div className="flex flex-col gap-6 w-full text-[#e5e2e3]">
+                    <div className="flex justify-between items-center pb-4 border-b border-white/[0.05]">
+                      <div>
+                        <h3 className="text-[18px] font-bold text-white">System Analytics</h3>
+                        <p className="text-[12px] text-custom-text-muted mt-1">Operational distribution and priority breakdown telemetry</p>
                       </div>
-                      <div className="text-label-sm text-custom-text-muted flex justify-between items-center">
-                        <span className="font-medium">75% resolved this week</span>
-                        <span className="text-primary font-bold">12/16</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-auto md:h-[400px]">
+                      <div className="bg-[#121315] border border-white/[0.05] rounded-xl p-5 inner-glow flex flex-col justify-between min-h-[220px]">
+                        <span className="text-[11px] text-custom-text-muted font-bold uppercase tracking-wider block mb-4">Issues by Category</span>
+                        <div className="flex-1 flex items-end gap-3 h-full pb-4 min-h-[120px]">
+                          <div className="flex-1 bg-primary/20 hover:bg-primary/40 rounded-t h-[80%] relative group cursor-pointer transition-colors">
+                            <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-mono font-bold text-white">80</span>
+                            <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] text-custom-text-muted uppercase">Elec</span>
+                          </div>
+                          <div className="flex-1 bg-secondary/20 hover:bg-secondary/40 rounded-t h-[45%] relative group cursor-pointer transition-colors">
+                            <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-mono font-bold text-white">45</span>
+                            <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] text-custom-text-muted uppercase">Plum</span>
+                          </div>
+                          <div className="flex-1 bg-tertiary/20 hover:bg-tertiary/40 rounded-t h-[60%] relative group cursor-pointer transition-colors">
+                            <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-mono font-bold text-white">60</span>
+                            <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] text-custom-text-muted uppercase">Net</span>
+                          </div>
+                          <div className="flex-1 bg-primary/20 hover:bg-primary/40 rounded-t h-[30%] relative group cursor-pointer transition-colors">
+                            <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-mono font-bold text-white">30</span>
+                            <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] text-custom-text-muted uppercase">Clean</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-[#121315] border border-white/[0.05] rounded-xl p-5 inner-glow flex flex-col justify-between min-h-[220px]">
+                        <span className="text-[11px] text-custom-text-muted font-bold uppercase tracking-wider block mb-4">Average Resolution Time</span>
+                        <div className="flex-1 flex flex-col justify-center gap-4">
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between text-[11px] font-mono">
+                              <span className="text-custom-text-muted">High Priority</span>
+                              <span className="text-white font-bold">1.2 hours</span>
+                            </div>
+                            <div className="h-2 bg-white/[0.04] rounded-full overflow-hidden">
+                              <div className="h-full bg-error rounded-full" style={{ width: '90%' }}></div>
+                            </div>
+                          </div>
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between text-[11px] font-mono">
+                              <span className="text-custom-text-muted">Medium Priority</span>
+                              <span className="text-white font-bold">4.8 hours</span>
+                            </div>
+                            <div className="h-2 bg-white/[0.04] rounded-full overflow-hidden">
+                              <div className="h-full bg-tertiary rounded-full" style={{ width: '60%' }}></div>
+                            </div>
+                          </div>
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between text-[11px] font-mono">
+                              <span className="text-custom-text-muted">Low Priority</span>
+                              <span className="text-white font-bold">12.4 hours</span>
+                            </div>
+                            <div className="h-2 bg-white/[0.04] rounded-full overflow-hidden">
+                              <div className="h-full bg-secondary rounded-full" style={{ width: '30%' }}></div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
+
+                {/* 5. Render Heatmap Mock View */}
+                {activeMockTab === 'Campus Heatmap' && (
+                  <div className="flex flex-col gap-6 w-full text-[#e5e2e3]">
+                    <div className="flex justify-between items-center pb-4 border-b border-white/[0.05]">
+                      <div>
+                        <h3 className="text-[18px] font-bold text-white">Campus Problem Heatmap</h3>
+                        <p className="text-[12px] text-custom-text-muted mt-1">Spatial breakdown of active reports across campus blocks</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-[#121315] border border-white/[0.05] rounded-xl p-6 inner-glow flex-1 flex flex-col justify-center items-center min-h-[400px] relative overflow-hidden">
+                      <div className="absolute inset-0 dot-pattern opacity-40"></div>
+                      
+                      <div className="relative w-full max-w-sm aspect-square border border-white/[0.05] bg-[#070708]/80 rounded-2xl p-6 flex items-center justify-center">
+                        <div className="w-[85%] h-[85%] relative border border-white/[0.03] rounded flex items-center justify-center text-[11px] font-mono-data text-custom-text-muted/40">
+                          CAMPUS BASE MAP GRID
+                          
+                          {/* Main Hostel Block */}
+                          <div className="absolute top-6 left-6 w-24 h-16 border border-white/[0.08] bg-white/[0.02] rounded flex flex-col items-center justify-center p-2">
+                            <span className="text-white font-bold text-[8px]">HOSTELS</span>
+                            <span className="w-2.5 h-2.5 rounded-full bg-error text-error text-[8px] font-bold flex items-center justify-center animate-ping mt-1"></span>
+                          </div>
+
+                          {/* Academic Block */}
+                          <div className="absolute top-6 right-6 w-28 h-20 border border-white/[0.08] bg-white/[0.02] rounded flex flex-col items-center justify-center p-2">
+                            <span className="text-white font-bold text-[8px]">ACADEMICS</span>
+                            <span className="w-2 h-2 rounded-full bg-secondary mt-1"></span>
+                          </div>
+
+                          {/* Library Block */}
+                          <div className="absolute bottom-8 left-10 w-20 h-20 border border-white/[0.08] bg-white/[0.02] rounded flex flex-col items-center justify-center p-2">
+                            <span className="text-white font-bold text-[8px]">LIBRARY</span>
+                            <span className="w-2 h-2 rounded-full bg-secondary mt-1 animate-pulse"></span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 6. Render Admins Mock View */}
+                {activeMockTab === 'Admins' && (
+                  <div className="flex flex-col gap-6 w-full text-[#e5e2e3]">
+                    <div className="flex justify-between items-center pb-4 border-b border-white/[0.05]">
+                      <div>
+                        <h3 className="text-[18px] font-bold text-white">Department Administrations</h3>
+                        <p className="text-[12px] text-custom-text-muted mt-1">Key routing dispatchers for campus resolutions</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div className="bg-[#121315] border border-white/[0.05] rounded-xl p-5 inner-glow flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-[#1b1c1e] border border-white/10 flex items-center justify-center text-[18px]">🔧</div>
+                        <div>
+                          <h4 className="text-[15px] font-bold text-white">Facilities & Utilities Division</h4>
+                          <p className="text-[12px] text-custom-text-muted mt-0.5">Admin: admin.facilities@smartcampus.edu</p>
+                          <span className="inline-block mt-2 px-2 py-0.5 bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold rounded">Primary Dispatch</span>
+                        </div>
+                      </div>
+
+                      <div className="bg-[#121315] border border-white/[0.05] rounded-xl p-5 inner-glow flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-[#1b1c1e] border border-white/10 flex items-center justify-center text-[18px]">💻</div>
+                        <div>
+                          <h4 className="text-[15px] font-bold text-white">IT & Network Infrastructure</h4>
+                          <p className="text-[12px] text-custom-text-muted mt-0.5">Admin: admin.network@smartcampus.edu</p>
+                          <span className="inline-block mt-2 px-2 py-0.5 bg-secondary/10 border border-secondary/20 text-secondary text-[10px] font-bold rounded">Active Routing</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 7. Render Leaderboard Mock View */}
+                {activeMockTab === 'Leaderboard' && (
+                  <div className="flex flex-col gap-6 w-full text-[#e5e2e3]">
+                    <div className="flex justify-between items-center pb-4 border-b border-white/[0.05]">
+                      <div>
+                        <h3 className="text-[18px] font-bold text-white">Active Student Leaderboard</h3>
+                        <p className="text-[12px] text-custom-text-muted mt-1">Student contributions and gamified resolution points rankings</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-[#121315] border border-white/[0.05] rounded-xl overflow-hidden inner-glow">
+                      <table className="w-full text-left">
+                        <thead>
+                          <tr className="border-b border-white/[0.05] text-[10px] text-custom-text-muted font-bold uppercase tracking-wider bg-black/10">
+                            <th className="py-3.5 px-4">Rank</th>
+                            <th className="py-3.5 px-4">Student Name</th>
+                            <th className="py-3.5 px-4">Branch</th>
+                            <th className="py-3.5 px-4">Points</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/[0.02] text-[13px]">
+                          <tr>
+                            <td className="py-4 px-4 font-mono-data text-secondary font-bold">#1</td>
+                            <td className="py-4 px-4 font-semibold text-white">John Doe</td>
+                            <td className="py-4 px-4 text-custom-text-muted">CSE (2023)</td>
+                            <td className="py-4 px-4 font-mono-data text-primary font-bold">1,420 pts</td>
+                          </tr>
+                          <tr>
+                            <td className="py-4 px-4 font-mono-data text-secondary font-bold">#2</td>
+                            <td className="py-4 px-4 font-semibold text-white">Sarah Connor</td>
+                            <td className="py-4 px-4 text-custom-text-muted">ECE (2024)</td>
+                            <td className="py-4 px-4 font-mono-data text-primary font-bold">1,210 pts</td>
+                          </tr>
+                          <tr>
+                            <td className="py-4 px-4 font-mono-data text-secondary font-bold">#3</td>
+                            <td className="py-4 px-4 font-semibold text-white">Bruce Wayne</td>
+                            <td className="py-4 px-4 text-custom-text-muted">ME (2023)</td>
+                            <td className="py-4 px-4 font-mono-data text-primary font-bold">950 pts</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Right Panel */}
@@ -504,20 +828,12 @@ export default function LandingPage() {
               <p className="font-h2 text-[48px] text-black leading-[1.1] max-w-2xl tracking-tight">
                 "SmartCampus AI completely transformed our campus operations. The response pipeline is faster and students feel heard."
               </p>
-              <div className="mt-12">
-                <div className="font-bold text-black font-body-lg text-[20px]">Dr. Elizabeth Vance</div>
-                <div className="text-black/70 font-body-md text-[16px] mt-1">Dean of Student Affairs, SmartCampus</div>
-              </div>
             </div>
             {/* Right Quote */}
             <div className="col-span-2 bg-[#C4FF44] rounded-[32px] p-16 flex flex-col justify-between h-[560px]">
               <p className="font-h3 text-[36px] text-black leading-[1.1] tracking-tight">
                 "It replaced manual spreadsheet tracking, endless status meetings, and phone calls."
               </p>
-              <div className="mt-12">
-                <div className="font-bold text-black font-body-lg text-[20px]">Chief of Operations</div>
-                <div className="text-black/70 font-body-md text-[16px] mt-1">Facilities Management, SmartCampus</div>
-              </div>
             </div>
           </div>
         </section>
@@ -545,15 +861,15 @@ export default function LandingPage() {
             </div>
             <div className="flex flex-col gap-5">
               <div className="font-mono-data text-on-surface font-medium mb-2 text-[12px] tracking-widest uppercase">PLATFORM</div>
-              <Link className="font-body-md text-[15px] text-custom-text-muted hover:text-white transition-colors" to="/dashboard">Dashboard</Link>
-              <Link className="font-body-md text-[15px] text-custom-text-muted hover:text-white transition-colors" to="/heatmap">Heatmap</Link>
-              <Link className="font-body-md text-[15px] text-custom-text-muted hover:text-white transition-colors" to="/leaderboard">Leaderboard</Link>
+              <button onClick={() => handleMockNavClick('Overview')} className="font-body-md text-[15px] text-custom-text-muted hover:text-white transition-colors text-left">Dashboard</button>
+              <button onClick={() => handleMockNavClick('Campus Heatmap')} className="font-body-md text-[15px] text-custom-text-muted hover:text-white transition-colors text-left">Heatmap</button>
+              <button onClick={() => handleMockNavClick('Leaderboard')} className="font-body-md text-[15px] text-custom-text-muted hover:text-white transition-colors text-left">Leaderboard</button>
             </div>
             <div className="flex flex-col gap-5">
               <div className="font-mono-data text-on-surface font-medium mb-2 text-[12px] tracking-widest uppercase">RESOURCES</div>
-              <span className="font-body-md text-[15px] text-custom-text-muted hover:text-white transition-colors cursor-pointer">SOP Index</span>
-              <span className="font-body-md text-[15px] text-custom-text-muted hover:text-white transition-colors cursor-pointer">AI Engine API</span>
-              <span className="font-body-md text-[15px] text-custom-text-muted hover:text-white transition-colors cursor-pointer">Status Reports</span>
+              <Link className="font-body-md text-[15px] text-custom-text-muted hover:text-white transition-colors" to="/sop-index">SOP Index</Link>
+              <Link className="font-body-md text-[15px] text-custom-text-muted hover:text-white transition-colors" to="/ai-api">AI Engine API</Link>
+              <Link className="font-body-md text-[15px] text-custom-text-muted hover:text-white transition-colors" to="/status-reports">Status Reports</Link>
             </div>
             <div className="flex flex-col gap-5">
               <div className="font-mono-data text-on-surface font-medium mb-2 text-[12px] tracking-widest uppercase">AUTH</div>
@@ -562,15 +878,15 @@ export default function LandingPage() {
             </div>
             <div className="flex flex-col gap-5">
               <div className="font-mono-data text-on-surface font-medium mb-2 text-[12px] tracking-widest uppercase">CAMPUS</div>
-              <span className="font-body-md text-[15px] text-custom-text-muted hover:text-white transition-colors cursor-pointer">Admins</span>
-              <span className="font-body-md text-[15px] text-custom-text-muted hover:text-white transition-colors cursor-pointer">Student Hub</span>
+              <Link className="font-body-md text-[15px] text-custom-text-muted hover:text-white transition-colors" to="/admins">Admins</Link>
+              <Link className="font-body-md text-[15px] text-custom-text-muted hover:text-white transition-colors" to="/student-hub">Student Hub</Link>
             </div>
           </div>
           <div className="max-w-[1728px] w-full mx-auto flex justify-between items-center border-t border-white/[0.05] pt-12 mt-auto">
             <div className="font-mono-data text-custom-text-muted text-[13px]">© 2026 SmartCampus. All rights reserved.</div>
             <div className="flex gap-8">
-              <span className="font-mono-data text-custom-text-muted text-[13px] hover:text-white transition-colors cursor-pointer">Privacy Policy</span>
-              <span className="font-mono-data text-custom-text-muted text-[13px] hover:text-white transition-colors cursor-pointer">Terms of Service</span>
+              <Link className="font-mono-data text-custom-text-muted text-[13px] hover:text-white transition-colors" to="/privacy-policy">Privacy Policy</Link>
+              <Link className="font-mono-data text-custom-text-muted text-[13px] hover:text-white transition-colors" to="/terms-of-service">Terms of Service</Link>
             </div>
           </div>
         </footer>

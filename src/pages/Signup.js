@@ -33,9 +33,22 @@ export default function Signup() {
   const [rollValidation, setRollValidation] = useState(null);
   const [nameValidation, setNameValidation] = useState(null);
   const [deptMatch, setDeptMatch] = useState(null);
-  const otpRefs = useRef([]);
-  const { signup } = useAuth();
+  const { signup, signupWithGoogle } = useAuth();
   const navigate = useNavigate();
+  const otpRefs = useRef([]);
+
+  const handleGoogleSignup = async () => {
+    setLoading(true);
+    try {
+      await signupWithGoogle(formData.designation, formData.phone);
+      toast.success('Registration successful! Welcome to SmartCampus! 🎉');
+      navigate('/dashboard');
+    } catch (err) {
+      toast.error(err.message || 'Google Sign-up failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const departments = getValidDepartments();
 
@@ -275,12 +288,12 @@ export default function Signup() {
           {/* Left Side - Info */}
           <div className="md:col-span-5 bg-[#0d0e0f]/50 border-r border-white/[0.05] p-8 md:p-10 flex flex-col justify-between relative">
             <div>
-              <div className="flex items-center gap-3 mb-8">
+              <Link className="flex items-center gap-3 mb-8 hover:opacity-85 transition-opacity" to="/">
                 <div className="w-8 h-8 rounded-full border border-primary/30 flex items-center justify-center bg-primary/10 shadow-[0_0_12px_rgba(94,107,255,0.2)]">
                   <FiShield className="text-[15px] text-primary" />
                 </div>
                 <span className="font-h3 text-[20px] font-bold tracking-tight text-on-surface">SmartCampus</span>
-              </div>
+              </Link>
               
               <h2 className="font-h2 text-[26px] leading-[1.2] text-on-surface font-bold tracking-tight mb-4">
                 Join SmartCampus.
@@ -385,12 +398,12 @@ export default function Signup() {
         {/* Left Side - Info */}
         <div className="md:col-span-5 bg-[#0d0e0f]/50 border-r border-white/[0.05] p-8 md:p-10 flex flex-col justify-between relative">
           <div>
-            <div className="flex items-center gap-3 mb-8">
+            <Link className="flex items-center gap-3 mb-8 hover:opacity-85 transition-opacity" to="/">
               <div className="w-8 h-8 rounded-full border border-primary/30 flex items-center justify-center bg-primary/10 shadow-[0_0_12px_rgba(94,107,255,0.2)]">
                 <FiShield className="text-[15px] text-primary" />
               </div>
               <span className="font-h3 text-[20px] font-bold tracking-tight text-on-surface">SmartCampus</span>
-            </div>
+            </Link>
 
             <h2 className="font-h2 text-[26px] leading-[1.2] text-on-surface font-bold tracking-tight mb-4">
               {accountType === 'student' ? 'Student Enrollment' : 'Staff Enrollment'}
@@ -600,6 +613,29 @@ export default function Signup() {
                       Continue
                       <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
                     </button>
+
+                    {accountType === 'staff' && (
+                      <>
+                        {/* Divider */}
+                        <div className="flex items-center my-4">
+                          <div className="flex-grow border-t border-white/[0.08]"></div>
+                          <span className="mx-4 text-[10px] text-custom-text-muted font-bold tracking-widest uppercase">OR</span>
+                          <div className="flex-grow border-t border-white/[0.08]"></div>
+                        </div>
+
+                        {/* Google Signup Button */}
+                        <button 
+                          type="button" 
+                          onClick={handleGoogleSignup}
+                          className="w-full bg-[#16171a]/50 hover:bg-[#16171a] border border-white/[0.08] text-white py-3.5 rounded-xl font-body-lg font-medium shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all flex justify-center items-center gap-3 inner-glow"
+                        >
+                          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114-3.486 0-6.313-2.827-6.313-6.313S10.505 5.888 13.99 5.888c1.558 0 3.007.575 4.137 1.637l3.057-3.057C19.294 2.72 16.793 1.8 13.99 1.8 8.163 1.8 3.44 6.523 3.44 12.35S8.163 22.9 13.99 22.9c5.887 0 10.63-4.148 10.63-10.457 0-.585-.054-1.16-.16-1.714H12.24z"/>
+                          </svg>
+                          Sign Up with Google
+                        </button>
+                      </>
+                    )}
                   </motion.div>
                 )}
 

@@ -19,6 +19,13 @@ import LandingPage from './pages/LandingPage';
 import Layout from './components/Layout';
 import AdminPanel from './pages/AdminPanel';
 import DepartmentAdmins from './pages/DepartmentAdmins';
+import SOPIndex from './pages/SOPIndex';
+import AIEngineAPI from './pages/AIEngineAPI';
+import StatusReports from './pages/StatusReports';
+import AdminsPage from './pages/AdminsPage';
+import StudentHub from './pages/StudentHub';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 
 function ProtectedRoute({ children, adminOnly = false }) {
   const { user, loading } = useAuth();
@@ -70,6 +77,16 @@ function App() {
           <Route path="/heatmap" element={<ProtectedRoute><Heatmap /></ProtectedRoute>} />
           <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          
+          {/* Public Static Resource Routes */}
+          <Route path="/sop-index" element={<SOPIndex />} />
+          <Route path="/ai-api" element={<AIEngineAPI />} />
+          <Route path="/status-reports" element={<StatusReports />} />
+          <Route path="/admins" element={<AdminsPage />} />
+          <Route path="/student-hub" element={<StudentHub />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
+
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Router>

@@ -2,7 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { sendSignupDecisionEmail } from '../services/emailService';
 import {
   fbGetUsers, fbGetUserById, fbGetUserByEmail,
-  fbCreateUser, fbUpdateUser, fbDeleteUser, fbSeedAdmin
+  fbCreateUser, fbUpdateUser, fbDeleteUser, fbSeedAdmin,
+  fbLoginWithGoogle
 } from '../services/firebase';
 
 const AuthContext = createContext(null);
@@ -74,6 +75,42 @@ export function AuthProvider({ children }) {
       createdAt: new Date().toISOString()
     });
     // Auto-login after OTP-verified signup (no admin approval needed)
+    setUser(newUser);
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ id: newUser.id }));
+    return newUser;
+  };
+
+  const loginWithGoogle = async () => {
+    const googleUser = await fbLoginWithGoogle();
+    const found = await fbGetUserByEmail(googleUser.email);
+    if (!found) {
+      throw new Error('No registered account found with this Google email. Please register normally first.');
+    }
+    setUser(found);
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ id: found.id }));
+    return found;
+  };
+
+  const signupWithGoogle = async (designation = '', phone = '') => {
+    const googleUser = await fbLoginWithGoogle();
+    const exists = await fbGetUserByEmail(googleUser.email);
+    if (exists) {
+      throw new Error('An account with this email already exists. Please log in.');
+    }
+    const newUser = await fbCreateUser({
+      name: googleUser.displayName || 'Google User',
+      email: googleUser.email,
+      password: '', 
+      role: 'staff',
+      department: '',
+      studentId: '',
+      phone: phone || '',
+      designation: designation || '',
+      emailVerified: true,
+      approved: true,
+      rejected: false,
+      createdAt: new Date().toISOString()
+    });
     setUser(newUser);
     localStorage.setItem(SESSION_KEY, JSON.stringify({ id: newUser.id }));
     return newUser;
@@ -163,6 +200,8 @@ export function AuthProvider({ children }) {
       signup,
       logout,
       updateProfile,
+      loginWithGoogle,
+      signupWithGoogle,
       // Admin utilities
       getPendingUsers,
       approveUser,
