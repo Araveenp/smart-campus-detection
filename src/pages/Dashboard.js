@@ -243,7 +243,7 @@ export default function Dashboard() {
           <h3 className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider mb-6 pb-2 border-b border-gray-100 dark:border-white/[0.03]">Priority Breakdown</h3>
           <div className="flex-1 relative flex items-center justify-center">
             {stats.total > 0 ? (
-              <Doughnut data={priorityData()} options={doughnutOptions} />
+              <Doughnut data={priorityData} options={doughnutOptions} />
             ) : (
               <p className="text-custom-text-muted text-body-md">No telemetry data available.</p>
             )}

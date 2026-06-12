@@ -54,8 +54,9 @@ export async function fbGetUserById(id) {
 }
 
 export async function fbGetUserByEmail(email) {
+  if (!email) return null;
   const users = await fbGetUsers();
-  return users.find(u => u.email === email) || null;
+  return users.find(u => u.email && u.email.toLowerCase() === email.toLowerCase()) || null;
 }
 
 export async function fbCreateUser(userData) {

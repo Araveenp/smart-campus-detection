@@ -81,39 +81,53 @@ export function AuthProvider({ children }) {
   };
 
   const loginWithGoogle = async () => {
-    const googleUser = await fbLoginWithGoogle();
-    const found = await fbGetUserByEmail(googleUser.email);
-    if (!found) {
-      throw new Error('No registered account found with this Google email. Please register normally first.');
+    try {
+      const googleUser = await fbLoginWithGoogle();
+      const found = await fbGetUserByEmail(googleUser.email);
+      if (!found) {
+        throw new Error('No registered account found with this Google email. Please register normally first.');
+      }
+      setUser(found);
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ id: found.id }));
+      return found;
+    } catch (err) {
+      if (err.code === 'auth/unauthorized-domain') {
+        throw new Error('Firebase Auth: This domain is not authorized. Please add "smartcampusdetection.vercel.app" to the "Authorized Domains" list in Firebase Console -> Authentication -> Settings.');
+      }
+      throw err;
     }
-    setUser(found);
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ id: found.id }));
-    return found;
   };
 
   const signupWithGoogle = async (designation = '', phone = '') => {
-    const googleUser = await fbLoginWithGoogle();
-    const exists = await fbGetUserByEmail(googleUser.email);
-    if (exists) {
-      throw new Error('An account with this email already exists. Please log in.');
+    try {
+      const googleUser = await fbLoginWithGoogle();
+      const exists = await fbGetUserByEmail(googleUser.email);
+      if (exists) {
+        throw new Error('An account with this email already exists. Please log in.');
+      }
+      const newUser = await fbCreateUser({
+        name: googleUser.displayName || 'Google User',
+        email: googleUser.email,
+        password: '', 
+        role: 'staff',
+        department: '',
+        studentId: '',
+        phone: phone || '',
+        designation: designation || '',
+        emailVerified: true,
+        approved: true,
+        rejected: false,
+        createdAt: new Date().toISOString()
+      });
+      setUser(newUser);
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ id: newUser.id }));
+      return newUser;
+    } catch (err) {
+      if (err.code === 'auth/unauthorized-domain') {
+        throw new Error('Firebase Auth: This domain is not authorized. Please add "smartcampusdetection.vercel.app" to the "Authorized Domains" list in Firebase Console -> Authentication -> Settings.');
+      }
+      throw err;
     }
-    const newUser = await fbCreateUser({
-      name: googleUser.displayName || 'Google User',
-      email: googleUser.email,
-      password: '', 
-      role: 'staff',
-      department: '',
-      studentId: '',
-      phone: phone || '',
-      designation: designation || '',
-      emailVerified: true,
-      approved: true,
-      rejected: false,
-      createdAt: new Date().toISOString()
-    });
-    setUser(newUser);
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ id: newUser.id }));
-    return newUser;
   };
 
   // Admin functions
