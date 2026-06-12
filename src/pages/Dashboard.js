@@ -154,7 +154,7 @@ export default function Dashboard() {
         <div className="flex items-center gap-3">
           <Link 
             to="/submit-complaint" 
-            className="bg-primary hover:bg-opacity-90 text-white px-6 py-2.5 rounded-full font-body-md font-bold transition-all hover:scale-[1.02] flex items-center gap-2 shadow-sm"
+            className="bg-gradient-to-r from-[#5E6BFF] to-[#00b1c2] hover:from-[#4d5eff] hover:to-[#009cb0] text-white px-6 py-2.5 rounded-full font-body-md font-bold transition-all hover:scale-[1.05] flex items-center gap-2 shadow-lg shadow-[#5E6BFF]/25 hover:shadow-[#5E6BFF]/40"
           >
             <FiPlus className="stroke-[3]" />
             New Complaint

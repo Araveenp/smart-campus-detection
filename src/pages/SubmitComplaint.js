@@ -57,6 +57,7 @@ export default function SubmitComplaint() {
   const [isListening, setIsListening] = useState(false);
   const [voiceText, setVoiceText] = useState('');
   const [voiceProcessing, setVoiceProcessing] = useState(false);
+  const [voiceLang, setVoiceLang] = useState('en-IN');
   const recognitionRef = useRef(null);
 
   const locations = [
@@ -133,8 +134,8 @@ export default function SubmitComplaint() {
     }
 
     const recognition = new SpeechRecognition();
-    // Hint to browser to listen for Indian accents/languages
-    recognition.lang = 'hi-IN'; 
+    // Hint to browser to listen for the selected language
+    recognition.lang = voiceLang; 
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
@@ -172,8 +173,8 @@ export default function SubmitComplaint() {
     recognition.start();
     setIsListening(true);
     setVoiceText('');
-    toast.info('🎙️ Listening... Speak in any language');
-  }, []);
+    toast.info('🎙️ Listening... Speak now');
+  }, [voiceLang]);
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current) {
@@ -386,6 +387,25 @@ Respond in EXACTLY this JSON format, nothing else:
         <div className="submit-form-section">
           {/* ===== VOICE ASSISTANT — DIRECT MIC ===== */}
           <div className="voice-section">
+            {/* Language Selector Dropdown */}
+            <div className="flex items-center gap-2 mb-3 bg-white/10 dark:bg-white/[0.02] border border-gray-300 dark:border-white/[0.08] px-3 py-1.5 rounded-xl max-w-xs">
+              <span className="material-symbols-outlined text-[16px] text-gray-500">translate</span>
+              <span className="text-[12px] font-semibold text-gray-600 dark:text-gray-400">Spoken Language:</span>
+              <select
+                value={voiceLang}
+                onChange={(e) => setVoiceLang(e.target.value)}
+                disabled={isListening || voiceProcessing}
+                className="bg-transparent border-none text-[12px] text-primary focus:ring-0 font-bold p-0 cursor-pointer w-auto"
+                style={{ background: 'none', border: 'none', padding: '0 8px 0 0', width: 'auto', outline: 'none', boxShadow: 'none' }}
+              >
+                <option value="en-IN" className="bg-white dark:bg-[#101112] text-slate-800 dark:text-white">English (India)</option>
+                <option value="te-IN" className="bg-white dark:bg-[#101112] text-slate-800 dark:text-white">Telugu (తెలుగు)</option>
+                <option value="hi-IN" className="bg-white dark:bg-[#101112] text-slate-800 dark:text-white">Hindi (हिन्दी)</option>
+                <option value="ta-IN" className="bg-white dark:bg-[#101112] text-slate-800 dark:text-white">Tamil (தமிழ்)</option>
+                <option value="kn-IN" className="bg-white dark:bg-[#101112] text-slate-800 dark:text-white">Kannada (ಕನ್ನಡ)</option>
+              </select>
+            </div>
+
             <div className="voice-row">
               <button
                 type="button"
