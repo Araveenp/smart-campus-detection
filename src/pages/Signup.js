@@ -2,13 +2,16 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
-import { FiUser, FiMail, FiLock, FiEye, FiEyeOff, FiShield, FiPhone, FiBookOpen, FiHash, FiAlertCircle, FiCheckCircle, FiInfo } from 'react-icons/fi';
+import { FiUser, FiMail, FiLock, FiEye, FiEyeOff, FiShield, FiPhone, FiBookOpen, FiHash, FiAlertCircle, FiCheckCircle, FiInfo, FiBriefcase } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateOTP, storeOTP, verifyOTP, sendOTPEmail } from '../services/emailService';
 import { validateRollNumber, validateStudentName, validateDepartmentMatch, checkDuplicateRoll, getValidDepartments, getDepartmentFromRoll } from '../services/studentValidation';
 import '../styles/auth.css';
 
 export default function Signup() {
+  // ===== ACCOUNT TYPE: 'student' or 'staff' =====
+  const [accountType, setAccountType] = useState(null); // null = selection screen
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -16,12 +19,13 @@ export default function Signup() {
     confirmPassword: '',
     department: '',
     studentId: '',
-    phone: ''
+    phone: '',
+    designation: '' // staff only
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [step, setStep] = useState(1); // 1: Account, 2: College Info, 3: OTP Verification
+  const [step, setStep] = useState(1);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [otpSent, setOtpSent] = useState(false); // eslint-disable-line no-unused-vars
   const [otpLoading, setOtpLoading] = useState(false);
@@ -35,6 +39,9 @@ export default function Signup() {
 
   const departments = getValidDepartments();
 
+  // Total steps: student = 3, staff = 2
+  const totalSteps = accountType === 'student' ? 3 : 2;
+
   // OTP Timer countdown
   useEffect(() => {
     if (otpTimer > 0) {
@@ -43,22 +50,22 @@ export default function Signup() {
     }
   }, [otpTimer]);
 
-  // Auto-set department from roll number
+  // Auto-set department from roll number (student only)
   useEffect(() => {
-    if (formData.studentId.length >= 8) {
+    if (accountType === 'student' && formData.studentId.length >= 8) {
       const dept = getDepartmentFromRoll(formData.studentId);
       if (dept) {
         setFormData(prev => ({ ...prev, department: dept }));
         setDeptMatch({ valid: true, message: `Auto-detected: ${dept}` });
       }
     }
-  }, [formData.studentId]);
+  }, [formData.studentId, accountType]);
 
   const updateField = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     setErrors(prev => ({ ...prev, [field]: '' }));
 
-    // Live validation for roll number
+    // Live validation for roll number (student only)
     if (field === 'studentId' && value.length > 0) {
       const result = validateRollNumber(value);
       setRollValidation(result);
@@ -76,17 +83,21 @@ export default function Signup() {
       setNameValidation(null);
     }
 
-    // Department match check
+    // Department match check (student only)
     if (field === 'department' && formData.studentId) {
       setDeptMatch(validateDepartmentMatch(formData.studentId, value));
     }
   };
 
-  // ===== STEP 1 VALIDATION =====
+  // ===== STEP 1 VALIDATION (Account Details — shared) =====
   const validateStep1 = () => {
     const errs = {};
-    const nameResult = validateStudentName(formData.name);
-    if (!nameResult.valid) errs.name = nameResult.message;
+    if (accountType === 'student') {
+      const nameResult = validateStudentName(formData.name);
+      if (!nameResult.valid) errs.name = nameResult.message;
+    } else {
+      if (!formData.name || formData.name.trim().length < 2) errs.name = 'Name is required (min 2 characters)';
+    }
     if (!formData.email) errs.email = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(formData.email)) errs.email = 'Invalid email format';
     if (!formData.password) errs.password = 'Password is required';
@@ -97,8 +108,8 @@ export default function Signup() {
     return Object.keys(errs).length === 0;
   };
 
-  // ===== STEP 2 VALIDATION =====
-  const validateStep2 = async () => {
+  // ===== STEP 2 VALIDATION (College Info — student only) =====
+  const validateStep2Student = async () => {
     const errs = {};
     const rollResult = validateRollNumber(formData.studentId);
     if (!rollResult.valid) {
@@ -117,12 +128,19 @@ export default function Signup() {
   };
 
   // ===== NAVIGATION =====
-  const handleNext1 = () => {
-    if (validateStep1()) setStep(2);
+  const handleNext1 = async () => {
+    if (!validateStep1()) return;
+    if (accountType === 'student') {
+      setStep(2);
+    } else {
+      // Staff: skip college info, go straight to OTP
+      await handleSendOTP();
+      setStep(2); // step 2 for staff = OTP
+    }
   };
 
-  const handleNext2 = async () => {
-    if (!(await validateStep2())) return;
+  const handleNext2Student = async () => {
+    if (!(await validateStep2Student())) return;
     await handleSendOTP();
     setStep(3);
   };
@@ -188,12 +206,18 @@ export default function Signup() {
     }
     setLoading(true);
     try {
-      await signup({
+      const signupData = {
         ...formData,
-        role: 'student', // ALWAYS student — admin signup is restricted
-        studentId: formData.studentId.toUpperCase(),
+        role: accountType === 'student' ? 'student' : 'staff',
         emailVerified: true
-      });
+      };
+      if (accountType === 'student') {
+        signupData.studentId = formData.studentId.toUpperCase();
+      } else {
+        signupData.studentId = '';
+        signupData.designation = formData.designation || '';
+      }
+      await signup(signupData);
       toast.success('Registration successful! Welcome to SmartCampus! 🎉');
       navigate('/dashboard');
     } catch (err) {
@@ -205,7 +229,7 @@ export default function Signup() {
 
   const getPasswordStrength = () => {
     const p = formData.password;
-    if (!p) return { width: '0%', color: '#e2e8f0', label: '' };
+    if (!p) return { width: '0%', color: '#454655', label: '' };
     let score = 0;
     if (p.length >= 6) score++;
     if (p.length >= 10) score++;
@@ -217,297 +241,489 @@ export default function Signup() {
       { width: '40%', color: '#f59e0b', label: 'Fair' },
       { width: '60%', color: '#eab308', label: 'Good' },
       { width: '80%', color: '#22c55e', label: 'Strong' },
-      { width: '100%', color: '#16a34a', label: 'Very Strong' }
+      { width: '100%', color: '#5E6BFF', label: 'Very Strong' }
     ];
     return levels[Math.min(score, 4)];
   };
 
   const strength = getPasswordStrength();
 
-  return (
-    <div className="auth-page">
-      <div className="auth-bg-shapes">
-        <div className="shape shape-1"></div>
-        <div className="shape shape-2"></div>
-        <div className="shape shape-3"></div>
-      </div>
+  const selectAccountType = (type) => {
+    setAccountType(type);
+    setStep(1);
+    setErrors({});
+    setFormData({
+      name: '', email: '', password: '', confirmPassword: '',
+      department: '', studentId: '', phone: '', designation: ''
+    });
+    setOtp(['', '', '', '', '', '']);
+    setRollValidation(null);
+    setNameValidation(null);
+    setDeptMatch(null);
+  };
 
-      <motion.div 
-        className="auth-container signup-container"
-        initial={{ opacity: 0, y: 20 }}
+  // ===== ACCOUNT TYPE SELECTION SCREEN =====
+  if (accountType === null) {
+    return (
+      <div className="min-h-screen bg-[#070708] dot-pattern flex items-center justify-center p-4 md:p-8 text-[#e5e2e3]">
+        <motion.div
+          className="w-full max-w-4xl bg-[#101112]/90 backdrop-blur-xl border border-white/[0.05] rounded-3xl overflow-hidden grid grid-cols-1 md:grid-cols-12 inner-glow shadow-2xl relative shadow-black/80"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          {/* Left Side - Info */}
+          <div className="md:col-span-5 bg-[#0d0e0f]/50 border-r border-white/[0.05] p-8 md:p-10 flex flex-col justify-between relative">
+            <div>
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-8 h-8 rounded-full border border-primary/30 flex items-center justify-center bg-primary/10 shadow-[0_0_12px_rgba(94,107,255,0.2)]">
+                  <FiShield className="text-[15px] text-primary" />
+                </div>
+                <span className="font-h3 text-[20px] font-bold tracking-tight text-on-surface">SmartCampus</span>
+              </div>
+              
+              <h2 className="font-h2 text-[26px] leading-[1.2] text-on-surface font-bold tracking-tight mb-4">
+                Join SmartCampus.
+              </h2>
+              <p className="text-body-md text-custom-text-muted leading-relaxed mb-8">
+                Create your account to start reporting infrastructure anomalies, tracking department responses, and viewing analytics.
+              </p>
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 text-[14px]">
+                  <span className="material-symbols-outlined text-[18px] text-secondary">check_circle</span>
+                  <span>OTP email verification</span>
+                </div>
+                <div className="flex items-center gap-3 text-[14px]">
+                  <span className="material-symbols-outlined text-[18px] text-secondary">check_circle</span>
+                  <span>AI issue auto-routing</span>
+                </div>
+                <div className="flex items-center gap-3 text-[14px]">
+                  <span className="material-symbols-outlined text-[18px] text-secondary">check_circle</span>
+                  <span>Real-time status updates</span>
+                </div>
+                <div className="flex items-center gap-3 text-[14px]">
+                  <span className="material-symbols-outlined text-[18px] text-secondary">check_circle</span>
+                  <span>Open to students & workers</span>
+                </div>
+              </div>
+            </div>
+            <div className="mt-8 pt-6 border-t border-white/[0.05] text-[12px] text-custom-text-muted">
+              Security verified signup pipeline.
+            </div>
+          </div>
+
+          {/* Right Side - Account Selection Cards */}
+          <div className="md:col-span-7 p-8 md:p-12 flex flex-col justify-center bg-transparent">
+            <div className="w-full">
+              <h1 className="font-h3 text-[28px] font-bold text-on-surface mb-2">Choose account type</h1>
+              <p className="text-body-md text-custom-text-muted mb-8">Select how you want to register in the campus system</p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                
+                {/* Student Card */}
+                <button
+                  onClick={() => selectAccountType('student')}
+                  className="bg-[#16171a] border border-white/[0.05] hover:border-primary/50 hover:bg-[#1c1d21] rounded-2xl p-6 text-left transition-all duration-300 flex flex-col justify-between h-[280px] group hover:shadow-lg hover:shadow-primary/5 cursor-pointer inner-glow"
+                >
+                  <div>
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-[22px] mb-4">🎓</div>
+                    <h3 className="text-[18px] font-bold text-white mb-2 group-hover:text-primary transition-colors">Student Account</h3>
+                    <p className="text-[13px] text-custom-text-muted leading-relaxed">For currently enrolled students with a valid college Roll Number.</p>
+                  </div>
+                  <span className="text-[12px] font-bold text-primary flex items-center gap-1 mt-4">
+                    Register as Student
+                    <span className="material-symbols-outlined text-[16px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                  </span>
+                </button>
+
+                {/* Staff Card */}
+                <button
+                  onClick={() => selectAccountType('staff')}
+                  className="bg-[#16171a] border border-white/[0.05] hover:border-secondary/50 hover:bg-[#1c1d21] rounded-2xl p-6 text-left transition-all duration-300 flex flex-col justify-between h-[280px] group hover:shadow-lg hover:shadow-secondary/5 cursor-pointer inner-glow"
+                >
+                  <div>
+                    <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center text-[22px] mb-4">🏢</div>
+                    <h3 className="text-[18px] font-bold text-white mb-2 group-hover:text-secondary transition-colors">Campus Staff</h3>
+                    <p className="text-[13px] text-custom-text-muted leading-relaxed">For faculty members, technicians, and campus workers.</p>
+                  </div>
+                  <span className="text-[12px] font-bold text-secondary flex items-center gap-1 mt-4">
+                    Register as Staff
+                    <span className="material-symbols-outlined text-[16px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                  </span>
+                </button>
+              </div>
+
+              <p className="mt-10 text-center text-body-md text-custom-text-muted">
+                Already have an account?{' '}
+                <Link to="/login" className="text-white hover:text-primary font-semibold underline decoration-white/20 hover:decoration-primary transition-all">
+                  Sign In
+                </Link>
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // ===== MAIN SIGNUP FORM STEP DISPLAY =====
+  const stepLabel = accountType === 'student'
+    ? (step === 1 ? 'Account Details' : step === 2 ? 'College Information' : 'Email Verification')
+    : (step === 1 ? 'Account Details' : 'Email Verification');
+
+  const isOtpStep = accountType === 'student' ? step === 3 : step === 2;
+
+  return (
+    <div className="min-h-screen bg-[#070708] dot-pattern flex items-center justify-center p-4 md:p-8 text-[#e5e2e3]">
+      <motion.div
+        className="w-full max-w-4xl bg-[#101112]/90 backdrop-blur-xl border border-white/[0.05] rounded-3xl overflow-hidden grid grid-cols-1 md:grid-cols-12 inner-glow shadow-2xl relative shadow-black/80"
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.6 }}
       >
-        <div className="auth-left">
-          <div className="auth-left-content">
-            <FiShield className="auth-logo-icon" />
-            <h2>Join SmartCampus</h2>
-            <p>Create your student account to report and track campus issues</p>
-            <div className="auth-features-list">
-              <div className="auth-feature-item">
-                <span className="feature-dot"></span>
-                OTP-verified email registration
+        {/* Left Side - Info */}
+        <div className="md:col-span-5 bg-[#0d0e0f]/50 border-r border-white/[0.05] p-8 md:p-10 flex flex-col justify-between relative">
+          <div>
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-8 h-8 rounded-full border border-primary/30 flex items-center justify-center bg-primary/10 shadow-[0_0_12px_rgba(94,107,255,0.2)]">
+                <FiShield className="text-[15px] text-primary" />
               </div>
-              <div className="auth-feature-item">
-                <span className="feature-dot"></span>
-                College ID validated enrollment
+              <span className="font-h3 text-[20px] font-bold tracking-tight text-on-surface">SmartCampus</span>
+            </div>
+
+            <h2 className="font-h2 text-[26px] leading-[1.2] text-on-surface font-bold tracking-tight mb-4">
+              {accountType === 'student' ? 'Student Enrollment' : 'Staff Enrollment'}
+            </h2>
+            <p className="text-body-md text-custom-text-muted leading-relaxed mb-6">
+              Complete your account creation. Your identity is verified securely via email OTP validation.
+            </p>
+
+            {/* Steps Visual checklist */}
+            <div className="space-y-4 my-8">
+              <div className="flex items-center gap-3 text-[14px]">
+                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${step > 1 ? 'bg-primary text-[#000469]' : 'border border-white/20 text-white'}`}>1</span>
+                <span className={step === 1 ? 'text-white font-medium' : 'text-custom-text-muted'}>Account Credentials</span>
               </div>
-              <div className="auth-feature-item">
-                <span className="feature-dot"></span>
-                AI-powered issue classification
-              </div>
-              <div className="auth-feature-item">
-                <span className="feature-dot"></span>
-                Track resolution progress
+              {accountType === 'student' && (
+                <div className="flex items-center gap-3 text-[14px]">
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${step > 2 ? 'bg-primary text-[#000469]' : step === 2 ? 'border border-primary text-primary bg-primary/10' : 'border border-white/20 text-white'}`}>2</span>
+                  <span className={step === 2 ? 'text-white font-medium' : 'text-custom-text-muted'}>College Registry Details</span>
+                </div>
+              )}
+              <div className="flex items-center gap-3 text-[14px]">
+                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${isOtpStep ? 'border border-primary text-primary bg-primary/10' : 'border border-white/20 text-white'}`}>{accountType === 'student' ? '3' : '2'}</span>
+                <span className={isOtpStep ? 'text-white font-medium' : 'text-custom-text-muted'}>OTP Verification</span>
               </div>
             </div>
 
-            <div className="auth-notice">
-              <FiAlertCircle />
-              <div>
-                <strong>Students Only</strong>
-                <p>Only student accounts can be created here. Admin accounts are managed by the institution.</p>
+            {/* Custom Notice panel */}
+            <div className="bg-[#16171a] border border-white/[0.05] rounded-2xl p-5 inner-glow flex items-start gap-3 mt-6">
+              <FiInfo className="text-secondary mt-0.5 flex-shrink-0" />
+              <div className="text-[12px] text-custom-text-muted leading-relaxed">
+                <strong>Privacy Protocol</strong>
+                <p className="mt-1">All student IDs are verified against college admissions. Password storage is salted and hashed in our database.</p>
               </div>
             </div>
           </div>
+
+          <div className="mt-8 pt-6 border-t border-white/[0.05] flex items-center justify-between">
+            <button 
+              onClick={() => setAccountType(null)}
+              className="text-[12px] font-semibold text-custom-text-muted hover:text-white transition-colors flex items-center gap-1"
+            >
+              <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+              Change Role
+            </button>
+            <span className="text-[11px] text-custom-text-muted/50 font-mono">REG_V1.2</span>
+          </div>
         </div>
 
-        <div className="auth-right">
-          <div className="auth-form-wrapper">
-            <h1>Create Student Account</h1>
-            <p className="auth-subtitle">Step {step} of 3 — {step === 1 ? 'Account Details' : step === 2 ? 'College Information' : 'Email Verification'}</p>
-
-            {/* Progress Bar */}
-            <div className="signup-progress">
-              <div className="progress-bar">
-                <div className="progress-fill" style={{ width: `${(step / 3) * 100}%` }}></div>
+        {/* Right Side - Multi-step Form */}
+        <div className="md:col-span-7 p-8 md:p-12 flex flex-col justify-center bg-transparent">
+          <div className="w-full">
+            
+            {/* Steps Progress Header */}
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h1 className="font-h3 text-[26px] font-bold text-on-surface">
+                  {accountType === 'student' ? 'Create Student Profile' : 'Create Staff Profile'}
+                </h1>
+                <p className="text-body-md text-custom-text-muted mt-1">{stepLabel}</p>
               </div>
-              <div className="progress-steps">
-                <span className={`progress-step ${step >= 1 ? 'active' : ''}`}>1</span>
-                <span className={`progress-step ${step >= 2 ? 'active' : ''}`}>2</span>
-                <span className={`progress-step ${step >= 3 ? 'active' : ''}`}>3</span>
-              </div>
+              <span className="text-[13px] font-mono text-primary bg-primary/10 border border-primary/20 px-3 py-1 rounded-lg">
+                Step {step}/{totalSteps}
+              </span>
             </div>
 
-            <form onSubmit={handleSubmit} className="auth-form" noValidate>
+            {/* Custom styled slider bar */}
+            <div className="h-1 bg-white/[0.04] rounded-full w-full mb-8 overflow-hidden">
+              <div className="h-full bg-primary rounded-full transition-all duration-300" style={{ width: `${(step / totalSteps) * 100}%` }}></div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-5" noValidate>
               <AnimatePresence mode="wait">
-              {/* ===== STEP 1: Account Details ===== */}
-              {step === 1 && (
-                <motion.div
-                  key="step1"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {/* Name Field */}
-                  <div className={`form-group ${errors.name ? 'error' : ''}`}>
-                    <label>Full Name <span className="label-hint">(as on College ID Card)</span></label>
-                    <div className="input-wrapper">
-                      <FiUser className="input-icon" />
-                      <input
-                        type="text"
-                        placeholder="e.g., john wick"
-                        value={formData.name}
-                        onChange={(e) => updateField('name', e.target.value)}
-                      />
-                      {nameValidation && (
-                        <span className={`validation-indicator ${nameValidation.valid ? 'valid' : 'invalid'}`}>
-                          {nameValidation.valid ? <FiCheckCircle /> : <FiAlertCircle />}
-                        </span>
+                
+                {/* STEP 1: General Credentials */}
+                {step === 1 && (
+                  <motion.div
+                    key="step1"
+                    initial={{ opacity: 0, x: -15 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 15 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-5"
+                  >
+                    {/* Name */}
+                    <div className="space-y-2">
+                      <label className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider">Full Name</label>
+                      <div className="relative">
+                        <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-custom-text-muted" />
+                        <input
+                          type="text"
+                          placeholder={accountType === 'student' ? "As on college ID" : "e.g., Prof. Sarah"}
+                          value={formData.name}
+                          onChange={(e) => updateField('name', e.target.value)}
+                          className={`w-full bg-[#16171a] border ${errors.name ? 'border-red-500/50' : 'border-white/[0.08]'} focus:border-primary text-white rounded-xl px-4 py-3 pl-11 outline-none transition-all text-body-md inner-glow`}
+                        />
+                        {nameValidation && nameValidation.valid && accountType === 'student' && (
+                          <FiCheckCircle className="absolute right-4 top-1/2 -translate-y-1/2 text-green-400" />
+                        )}
+                      </div>
+                      {errors.name && <p className="text-red-400 text-[12px] font-medium flex items-center gap-1.5"><FiAlertCircle size={12} />{errors.name}</p>}
+                      {!errors.name && nameValidation && !nameValidation.valid && accountType === 'student' && (
+                        <p className="text-yellow-400 text-[12.5px] leading-relaxed flex items-start gap-1.5"><FiInfo size={12} className="mt-0.5 flex-shrink-0" />{nameValidation.message}</p>
                       )}
                     </div>
-                    {errors.name && <span className="error-text">{errors.name}</span>}
-                    {!errors.name && nameValidation && !nameValidation.valid && (
-                      <span className="warning-text"><FiInfo size={12} /> {nameValidation.message}</span>
-                    )}
-                    <span className="field-hint">Enter your full name exactly as it appears on your college ID card</span>
-                  </div>
 
-                  {/* Email Field */}
-                  <div className={`form-group ${errors.email ? 'error' : ''}`}>
-                    <label>Email Address</label>
-                    <div className="input-wrapper">
-                      <FiMail className="input-icon" />
-                      <input
-                        type="email"
-                        placeholder="Enter your email"
-                        value={formData.email}
-                        onChange={(e) => updateField('email', e.target.value)}
-                      />
+                    {/* Email */}
+                    <div className="space-y-2">
+                      <label className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider">Email Address</label>
+                      <div className="relative">
+                        <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-custom-text-muted" />
+                        <input
+                          type="email"
+                          placeholder="e.g., student@college.edu"
+                          value={formData.email}
+                          onChange={(e) => updateField('email', e.target.value)}
+                          className={`w-full bg-[#16171a] border ${errors.email ? 'border-red-500/50' : 'border-white/[0.08]'} focus:border-primary text-white rounded-xl px-4 py-3 pl-11 outline-none transition-all text-body-md inner-glow`}
+                        />
+                      </div>
+                      {errors.email && <p className="text-red-400 text-[12px] font-medium flex items-center gap-1.5"><FiAlertCircle size={12} />{errors.email}</p>}
                     </div>
-                    {errors.email && <span className="error-text">{errors.email}</span>}
-                    <span className="field-hint">An OTP will be sent to verify this email</span>
-                  </div>
 
-                  {/* Password Field */}
-                  <div className={`form-group ${errors.password ? 'error' : ''}`}>
-                    <label>Password</label>
-                    <div className="input-wrapper">
-                      <FiLock className="input-icon" />
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="Create a strong password"
-                        value={formData.password}
-                        onChange={(e) => updateField('password', e.target.value)}
-                      />
-                      <button type="button" className="toggle-password" onClick={() => setShowPassword(!showPassword)}>
-                        {showPassword ? <FiEyeOff /> : <FiEye />}
-                      </button>
-                    </div>
-                    {formData.password && (
-                      <div className="password-strength">
-                        <div className="strength-bar">
-                          <div className="strength-fill" style={{ width: strength.width, backgroundColor: strength.color }}></div>
+                    {/* Staff details */}
+                    {accountType === 'staff' && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider">Designation</label>
+                          <div className="relative">
+                            <FiBriefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-custom-text-muted" />
+                            <input
+                              type="text"
+                              placeholder="e.g., Professor, Security"
+                              value={formData.designation}
+                              onChange={(e) => updateField('designation', e.target.value)}
+                              className="w-full bg-[#16171a] border border-white/[0.08] focus:border-primary text-white rounded-xl px-4 py-3 pl-11 outline-none transition-all text-body-md inner-glow"
+                            />
+                          </div>
                         </div>
-                        <span style={{ color: strength.color }}>{strength.label}</span>
+
+                        <div className="space-y-2">
+                          <label className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider">Phone (Optional)</label>
+                          <div className="relative">
+                            <FiPhone className="absolute left-4 top-1/2 -translate-y-1/2 text-custom-text-muted" />
+                            <input
+                              type="tel"
+                              placeholder="10 digits"
+                              value={formData.phone}
+                              onChange={(e) => updateField('phone', e.target.value.replace(/\D/g, ''))}
+                              maxLength={10}
+                              className="w-full bg-[#16171a] border border-white/[0.08] focus:border-primary text-white rounded-xl px-4 py-3 pl-11 outline-none transition-all text-body-md inner-glow"
+                            />
+                          </div>
+                        </div>
                       </div>
                     )}
-                    {errors.password && <span className="error-text">{errors.password}</span>}
-                  </div>
 
-                  {/* Confirm Password */}
-                  <div className={`form-group ${errors.confirmPassword ? 'error' : ''}`}>
-                    <label>Confirm Password</label>
-                    <div className="input-wrapper">
-                      <FiLock className="input-icon" />
-                      <input
-                        type="password"
-                        placeholder="Confirm your password"
-                        value={formData.confirmPassword}
-                        onChange={(e) => updateField('confirmPassword', e.target.value)}
-                      />
+                    {/* Password */}
+                    <div className="space-y-2">
+                      <label className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider">Password</label>
+                      <div className="relative">
+                        <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-custom-text-muted" />
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Create strong password"
+                          value={formData.password}
+                          onChange={(e) => updateField('password', e.target.value)}
+                          className={`w-full bg-[#16171a] border ${errors.password ? 'border-red-500/50' : 'border-white/[0.08]'} focus:border-primary text-white rounded-xl px-4 py-3 pl-11 outline-none transition-all text-body-md inner-glow pr-12`}
+                        />
+                        <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-custom-text-muted hover:text-white transition-colors" onClick={() => setShowPassword(!showPassword)}>
+                          {showPassword ? <FiEyeOff /> : <FiEye />}
+                        </button>
+                      </div>
+                      
+                      {/* Password strength meter */}
+                      {formData.password && (
+                        <div className="space-y-1.5 pt-1">
+                          <div className="h-1 bg-white/[0.04] rounded-full w-full overflow-hidden flex gap-1">
+                            <div className="h-full rounded-full transition-all duration-300" style={{ width: strength.width, backgroundColor: strength.color }}></div>
+                          </div>
+                          <span className="text-[11px] font-bold uppercase tracking-wider block" style={{ color: strength.color }}>Strength: {strength.label}</span>
+                        </div>
+                      )}
+                      {errors.password && <p className="text-red-400 text-[12px] font-medium flex items-center gap-1.5"><FiAlertCircle size={12} />{errors.password}</p>}
                     </div>
-                    {errors.confirmPassword && <span className="error-text">{errors.confirmPassword}</span>}
-                  </div>
 
-                  <button type="button" className="btn-auth-submit" onClick={handleNext1}>
-                    Continue to College Info →
-                  </button>
-                </motion.div>
-              )}
-
-              {/* ===== STEP 2: College Information ===== */}
-              {step === 2 && (
-                <motion.div
-                  key="step2"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {/* Role Notice */}
-                  <div className="role-notice">
-                    <FiShield />
-                    <div>
-                      <strong>🎓 Student Registration Only</strong>
-                      <p>This signup is exclusively for students. Admin accounts cannot be created here and are managed by the institution.</p>
+                    {/* Confirm Password */}
+                    <div className="space-y-2">
+                      <label className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider">Confirm Password</label>
+                      <div className="relative">
+                        <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-custom-text-muted" />
+                        <input
+                          type="password"
+                          placeholder="Confirm password"
+                          value={formData.confirmPassword}
+                          onChange={(e) => updateField('confirmPassword', e.target.value)}
+                          className={`w-full bg-[#16171a] border ${errors.confirmPassword ? 'border-red-500/50' : 'border-white/[0.08]'} focus:border-primary text-white rounded-xl px-4 py-3 pl-11 outline-none transition-all text-body-md inner-glow`}
+                        />
+                      </div>
+                      {errors.confirmPassword && <p className="text-red-400 text-[12px] font-medium flex items-center gap-1.5"><FiAlertCircle size={12} />{errors.confirmPassword}</p>}
                     </div>
-                  </div>
 
-                  {/* Roll Number */}
-                  <div className={`form-group ${errors.studentId ? 'error' : ''}`}>
-                    <label>Roll Number <span className="label-hint">(College ID)</span></label>
-                    <div className="input-wrapper">
-                      <FiHash className="input-icon" />
-                      <input
-                        type="text"
-                        placeholder="e.g., 23881A0501"
-                        value={formData.studentId}
-                        onChange={(e) => updateField('studentId', e.target.value.toUpperCase())}
-                        maxLength={10}
-                        style={{ textTransform: 'uppercase' }}
-                      />
-                      {rollValidation && (
-                        <span className={`validation-indicator ${rollValidation.valid ? 'valid' : 'invalid'}`}>
-                          {rollValidation.valid ? <FiCheckCircle /> : <FiAlertCircle />}
-                        </span>
+                    {/* Continue Button */}
+                    <button 
+                      type="button" 
+                      onClick={handleNext1}
+                      className="w-full bg-white text-black py-3.5 rounded-xl font-body-lg font-bold shadow-sm hover:scale-[1.01] active:scale-[0.99] transition-all flex justify-center items-center gap-2 mt-8"
+                    >
+                      Continue
+                      <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                    </button>
+                  </motion.div>
+                )}
+
+                {/* STEP 2: Student College details */}
+                {step === 2 && accountType === 'student' && (
+                  <motion.div
+                    key="step2"
+                    initial={{ opacity: 0, x: -15 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 15 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-5"
+                  >
+                    {/* Roll Number */}
+                    <div className="space-y-2">
+                      <label className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider">Roll Number</label>
+                      <div className="relative">
+                        <FiHash className="absolute left-4 top-1/2 -translate-y-1/2 text-custom-text-muted" />
+                        <input
+                          type="text"
+                          placeholder="e.g., 23881A0501"
+                          value={formData.studentId}
+                          onChange={(e) => updateField('studentId', e.target.value.toUpperCase())}
+                          maxLength={10}
+                          style={{ textTransform: 'uppercase' }}
+                          className={`w-full bg-[#16171a] border ${errors.studentId ? 'border-red-500/50' : 'border-white/[0.08]'} focus:border-primary text-white rounded-xl px-4 py-3 pl-11 outline-none transition-all text-body-md inner-glow`}
+                        />
+                        {rollValidation && rollValidation.valid && (
+                          <FiCheckCircle className="absolute right-4 top-1/2 -translate-y-1/2 text-green-400" />
+                        )}
+                      </div>
+                      {errors.studentId && <p className="text-red-400 text-[12px] font-medium flex items-center gap-1.5"><FiAlertCircle size={12} />{errors.studentId}</p>}
+                      {!errors.studentId && rollValidation && !rollValidation.valid && formData.studentId.length >= 3 && (
+                        <p className="text-yellow-400 text-[12.5px] leading-relaxed flex items-start gap-1.5"><FiInfo size={12} className="mt-0.5 flex-shrink-0" />{rollValidation.message}</p>
+                      )}
+                      {rollValidation && rollValidation.valid && (
+                        <div className="bg-[#121315] border border-white/[0.03] rounded-xl p-3 text-[12px] text-primary flex items-start gap-2 inner-glow">
+                          <FiCheckCircle size={14} className="mt-0.5 flex-shrink-0" />
+                          <div>
+                            <strong>Registry Match Found</strong>
+                            <p className="mt-0.5">{rollValidation.parsed.department} - {rollValidation.parsed.branch} (Batch {rollValidation.parsed.admissionYear})</p>
+                          </div>
+                        </div>
                       )}
                     </div>
-                    {errors.studentId && <span className="error-text">{errors.studentId}</span>}
-                    {!errors.studentId && rollValidation && !rollValidation.valid && formData.studentId.length >= 3 && (
-                      <span className="warning-text"><FiInfo size={12} /> {rollValidation.message}</span>
-                    )}
-                    {rollValidation && rollValidation.valid && (
-                      <span className="success-text">
-                        <FiCheckCircle size={12} /> {rollValidation.parsed.department} — {rollValidation.parsed.branch} — Batch {rollValidation.parsed.admissionYear}
-                      </span>
-                    )}
-                    <div className="field-hint-box">
-                      <strong>Format: 23881A05XX</strong>
-                      <ul>
-                        <li><code>23</code> — Admission year</li>
-                        <li><code>881</code> — College code</li>
-                        <li><code>A</code> — Regular (B = Lateral)</li>
-                        <li><code>05</code> — Department code (e.g., 05 = CSE)</li>
-                        <li><code>XX</code> — Your roll number</li>
-                      </ul>
-                    </div>
-                  </div>
 
-                  {/* Department (auto-filled from roll number) */}
-                  <div className={`form-group ${errors.department ? 'error' : ''}`}>
-                    <label>Department</label>
-                    <div className="input-wrapper">
-                      <FiBookOpen className="input-icon" />
-                      <select
-                        value={formData.department}
-                        onChange={(e) => updateField('department', e.target.value)}
+                    {/* Department dropdown */}
+                    <div className="space-y-2">
+                      <label className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider">Department</label>
+                      <div className="relative">
+                        <FiBookOpen className="absolute left-4 top-1/2 -translate-y-1/2 text-custom-text-muted" />
+                        <select
+                          value={formData.department}
+                          onChange={(e) => updateField('department', e.target.value)}
+                          className={`w-full bg-[#16171a] border ${errors.department ? 'border-red-500/50' : 'border-white/[0.08]'} focus:border-primary text-white rounded-xl px-4 py-3 pl-11 outline-none transition-all text-body-md inner-glow appearance-none`}
+                        >
+                          <option value="">Select Department</option>
+                          {departments.map(d => <option key={d} value={d} className="bg-[#101112]">{d}</option>)}
+                        </select>
+                        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-custom-text-muted pointer-events-none text-[20px]">expand_more</span>
+                      </div>
+                      {errors.department && <p className="text-red-400 text-[12px] font-medium flex items-center gap-1.5"><FiAlertCircle size={12} />{errors.department}</p>}
+                      {deptMatch && deptMatch.valid && formData.department && (
+                        <p className="text-green-400 text-[12px] font-semibold flex items-center gap-1.5"><FiCheckCircle size={12} />{deptMatch.message}</p>
+                      )}
+                    </div>
+
+                    {/* Phone optional */}
+                    <div className="space-y-2">
+                      <label className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider">Phone Number <span className="text-[11px] text-custom-text-muted/60 normal-case">(Optional)</span></label>
+                      <div className="relative">
+                        <FiPhone className="absolute left-4 top-1/2 -translate-y-1/2 text-custom-text-muted" />
+                        <input
+                          type="tel"
+                          placeholder="e.g., 9876543210"
+                          value={formData.phone}
+                          onChange={(e) => updateField('phone', e.target.value.replace(/\D/g, ''))}
+                          maxLength={10}
+                          className="w-full bg-[#16171a] border border-white/[0.08] focus:border-primary text-white rounded-xl px-4 py-3 pl-11 outline-none transition-all text-body-md inner-glow"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Navigation Buttons */}
+                    <div className="grid grid-cols-3 gap-4 mt-8">
+                      <button 
+                        type="button" 
+                        onClick={() => setStep(1)}
+                        className="bg-transparent border border-white/[0.1] text-white py-3.5 rounded-xl text-body-md font-bold hover:bg-white/5 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5"
                       >
-                        <option value="">Select Department</option>
-                        {departments.map(d => <option key={d} value={d}>{d}</option>)}
-                      </select>
+                        <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                        Back
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={handleNext2Student}
+                        className="col-span-2 bg-white text-black py-3.5 rounded-xl text-body-md font-bold hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+                      >
+                        Verify Email
+                        <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                      </button>
                     </div>
-                    {errors.department && <span className="error-text">{errors.department}</span>}
-                    {deptMatch && deptMatch.valid && formData.department && (
-                      <span className="success-text"><FiCheckCircle size={12} /> {deptMatch.message}</span>
-                    )}
-                    <span className="field-hint">Department is auto-detected from roll number.</span>
-                  </div>
+                  </motion.div>
+                )}
 
-                  {/* Phone (Optional) */}
-                  <div className="form-group">
-                    <label>Phone Number <span className="label-hint">(Optional)</span></label>
-                    <div className="input-wrapper">
-                      <FiPhone className="input-icon" />
-                      <input
-                        type="tel"
-                        placeholder="e.g., 9876543210"
-                        value={formData.phone}
-                        onChange={(e) => updateField('phone', e.target.value)}
-                        maxLength={10}
-                      />
+                {/* OTP VERIFICATION STEP */}
+                {isOtpStep && (
+                  <motion.div
+                    key="stepOtp"
+                    initial={{ opacity: 0, x: -15 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 15 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-6 text-center"
+                  >
+                    <div className="flex flex-col items-center py-4">
+                      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-[26px] mb-4 text-primary animate-pulse">📧</div>
+                      <h3 className="text-[20px] font-bold text-white mb-2">Check your email</h3>
+                      <p className="text-[14px] text-custom-text-muted max-w-sm">We have dispatched a 6-digit OTP code to</p>
+                      <p className="text-[14px] text-primary font-bold mt-1 font-mono">{formData.email}</p>
                     </div>
-                  </div>
 
-                  <div className="form-row">
-                    <button type="button" className="btn-auth-back" onClick={() => setStep(1)}>
-                      ← Back
-                    </button>
-                    <button type="button" className="btn-auth-submit" onClick={handleNext2} disabled={otpLoading}>
-                      {otpLoading ? <span className="btn-spinner"></span> : 'Verify Email →'}
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* ===== STEP 3: OTP Verification ===== */}
-              {step === 3 && (
-                <motion.div
-                  key="step3"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <div className="otp-section">
-                    <div className="otp-icon">📧</div>
-                    <h3>Verify Your Email</h3>
-                    <p>We've sent a 6-digit OTP to</p>
-                    <p className="otp-email">{formData.email}</p>
-
-                    {/* OTP Input Boxes */}
-                    <div className="otp-inputs" onPaste={handleOtpPaste}>
+                    {/* OTP 6-grid inputs */}
+                    <div className="flex justify-center gap-3 md:gap-4 max-w-sm mx-auto" onPaste={handleOtpPaste}>
                       {otp.map((digit, i) => (
                         <input
                           key={i}
@@ -517,39 +733,63 @@ export default function Signup() {
                           value={digit}
                           onChange={(e) => handleOtpChange(i, e.target.value.replace(/\D/g, ''))}
                           onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                          className="otp-input"
+                          className="w-12 h-14 md:w-14 md:h-16 bg-[#16171a] border border-white/[0.08] focus:border-primary text-white rounded-xl text-center font-mono-data text-[24px] font-bold outline-none transition-all inner-glow"
                           autoFocus={i === 0}
                         />
                       ))}
                     </div>
 
-                    {/* Timer & Resend */}
-                    <div className="otp-timer">
+                    {/* Timer */}
+                    <div className="text-[13px] text-custom-text-muted">
                       {otpTimer > 0 ? (
-                        <span>Resend OTP in <strong>{Math.floor(otpTimer / 60)}:{String(otpTimer % 60).padStart(2, '0')}</strong></span>
+                        <span className="flex items-center justify-center gap-1.5"><span className="material-symbols-outlined text-[16px] animate-spin-slow">schedule</span>Resend OTP in <strong>{Math.floor(otpTimer / 60)}:{String(otpTimer % 60).padStart(2, '0')}</strong></span>
                       ) : (
-                        <button type="button" className="btn-resend" onClick={handleResendOTP} disabled={otpLoading}>
+                        <button 
+                          type="button" 
+                          onClick={handleResendOTP} 
+                          disabled={otpLoading}
+                          className="text-primary hover:text-white underline font-bold tracking-wide transition-all disabled:opacity-50"
+                        >
                           {otpLoading ? 'Sending...' : 'Resend OTP'}
                         </button>
                       )}
                     </div>
 
-                    <div className="form-row">
-                      <button type="button" className="btn-auth-back" onClick={() => setStep(2)}>
-                        ← Back
+                    {/* Actions */}
+                    <div className="grid grid-cols-3 gap-4 pt-6">
+                      <button 
+                        type="button" 
+                        onClick={() => setStep(accountType === 'student' ? 2 : 1)}
+                        className="bg-transparent border border-white/[0.1] text-white py-3.5 rounded-xl text-body-md font-bold hover:bg-white/5 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                        Back
                       </button>
-                      <button type="submit" className="btn-auth-submit" disabled={loading || otp.join('').length !== 6}>
-                        {loading ? <span className="btn-spinner"></span> : '✅ Verify & Create Account'}
+                      <button 
+                        type="submit" 
+                        disabled={loading || otp.join('').length !== 6}
+                        className="col-span-2 bg-primary text-[#000469] py-3.5 rounded-xl text-body-md font-bold hover:brightness-110 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:scale-100 disabled:pointer-events-none shadow-lg shadow-primary/20"
+                      >
+                        {loading ? (
+                          <span className="w-5 h-5 border-2 border-[#000469] border-t-transparent rounded-full animate-spin"></span>
+                        ) : (
+                          <>
+                            Verify & Register
+                            <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                          </>
+                        )}
                       </button>
                     </div>
-                  </div>
-                </motion.div>
-              )}
+                  </motion.div>
+                )}
               </AnimatePresence>
             </form>
 
-            <p className="auth-switch">
-              Already have an account? <Link to="/login">Sign In</Link>
+            <p className="mt-8 text-center text-body-md text-custom-text-muted">
+              Already have an account?{' '}
+              <Link to="/login" className="text-white hover:text-primary font-semibold underline decoration-white/20 hover:decoration-primary transition-all">
+                Sign In
+              </Link>
             </p>
           </div>
         </div>
