@@ -20,7 +20,8 @@ export default function Signup() {
     department: '',
     studentId: '',
     phone: '',
-    designation: '' // staff only
+    designation: '', // staff only
+    languagePreference: 'en-IN'
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -33,9 +34,15 @@ export default function Signup() {
   const [rollValidation, setRollValidation] = useState(null);
   const [nameValidation, setNameValidation] = useState(null);
   const [deptMatch, setDeptMatch] = useState(null);
-  const { signup, signupWithGoogle } = useAuth();
+  const { signup, signupWithGoogle, language } = useAuth();
   const navigate = useNavigate();
   const otpRefs = useRef([]);
+
+  useEffect(() => {
+    if (language) {
+      setFormData(prev => ({ ...prev, languagePreference: language }));
+    }
+  }, [language]);
 
   const handleGoogleSignup = async () => {
     setLoading(true);
@@ -267,7 +274,8 @@ export default function Signup() {
     setErrors({});
     setFormData({
       name: '', email: '', password: '', confirmPassword: '',
-      department: '', studentId: '', phone: '', designation: ''
+      department: '', studentId: '', phone: '', designation: '',
+      languagePreference: 'en-IN'
     });
     setOtp(['', '', '', '', '', '']);
     setRollValidation(null);

@@ -19,6 +19,7 @@ import LandingPage from './pages/LandingPage';
 import Layout from './components/Layout';
 import AdminPanel from './pages/AdminPanel';
 import DepartmentAdmins from './pages/DepartmentAdmins';
+import LanguageOverlay from './components/LanguageOverlay';
 import SOPIndex from './pages/SOPIndex';
 import AIEngineAPI from './pages/AIEngineAPI';
 import StatusReports from './pages/StatusReports';
@@ -57,6 +58,7 @@ function App() {
     <ThemeProvider>
     <AuthProvider>
       <Router>
+        <LanguageOverlay />
         <ToastContainer
           position="top-right"
           autoClose={3000}

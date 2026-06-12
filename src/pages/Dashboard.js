@@ -15,7 +15,7 @@ import '../styles/dashboard.css';
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler);
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, t } = useAuth();
   const [complaints, setComplaints] = useState([]);
 
   useEffect(() => {
@@ -141,14 +141,14 @@ export default function Dashboard() {
             initial={{ opacity: 0, x: -20 }} 
             animate={{ opacity: 1, x: 0 }}
           >
-            Welcome back,{' '}
+            {t('dash_welcome')},{' '}
             <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
               {user?.name?.split(' ')[0]}!
             </span>{' '}
             👋
           </motion.h1>
           <p className="text-body-md text-custom-text-muted mt-1">
-            Campus problem detection and automation dashboard.
+            {t('dash_subtitle')}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -157,7 +157,7 @@ export default function Dashboard() {
             className="bg-gradient-to-r from-[#5E6BFF] to-[#00b1c2] hover:from-[#4d5eff] hover:to-[#009cb0] text-white px-6 py-2.5 rounded-full font-body-md font-bold transition-all hover:scale-[1.05] flex items-center gap-2 shadow-lg shadow-[#5E6BFF]/25 hover:shadow-[#5E6BFF]/40"
           >
             <FiPlus className="stroke-[3]" />
-            New Complaint
+            {t('nav_submit')}
           </Link>
         </div>
       </div>
@@ -165,10 +165,10 @@ export default function Dashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: 'Total Complaints', value: stats.total, icon: <FiTrendingUp />, color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20' },
-          { label: 'Open Issues', value: stats.open, icon: <FiAlertCircle />, color: 'text-error', bg: 'bg-error/10', border: 'border-error/20' },
-          { label: 'In Progress', value: stats.inProgress, icon: <FiClock />, color: 'text-tertiary', bg: 'bg-tertiary/10', border: 'border-tertiary/20' },
-          { label: 'Resolved Complaints', value: stats.resolved, icon: <FiCheckCircle />, color: 'text-secondary', bg: 'bg-secondary/10', border: 'border-secondary/20' }
+          { label: t('dash_total'), value: stats.total, icon: <FiTrendingUp />, color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20' },
+          { label: t('dash_open'), value: stats.open, icon: <FiAlertCircle />, color: 'text-error', bg: 'bg-error/10', border: 'border-error/20' },
+          { label: t('dash_in_progress'), value: stats.inProgress, icon: <FiClock />, color: 'text-tertiary', bg: 'bg-tertiary/10', border: 'border-tertiary/20' },
+          { label: t('dash_resolved'), value: stats.resolved, icon: <FiCheckCircle />, color: 'text-secondary', bg: 'bg-secondary/10', border: 'border-secondary/20' }
         ].map((stat, i) => (
           <motion.div 
             key={i} 
@@ -203,9 +203,9 @@ export default function Dashboard() {
           <FiCpu />
         </div>
         <div className="text-body-md text-custom-text-muted leading-relaxed">
-          <strong className="text-slate-900 dark:text-white">SmartCampus Intelligence:</strong> {stats.highPriority} high-priority issues detected. 
-          {stats.open > 0 ? ` ${stats.open} complaints are awaiting immediate triage.` : ' All campus issues are currently stable.'} 
-          {' '}Most reported category: <strong className="text-secondary">
+          <strong className="text-slate-900 dark:text-white">{t('dash_intelligence')}:</strong> {stats.highPriority} high-priority issues detected. 
+          {stats.open > 0 ? ` ${stats.open} ${t('dash_intel_active')}` : ` ${t('dash_intel_stable')}`} 
+          {' '}{t('dash_most_reported')}: <strong className="text-secondary">
             {(() => {
               const cats = {};
               complaints.forEach(c => { cats[c.category] = (cats[c.category] || 0) + 1; });
@@ -220,19 +220,19 @@ export default function Dashboard() {
         
         {/* Category Distribution */}
         <div className="bg-white dark:bg-[#121315] border border-gray-100 dark:border-white/[0.05] rounded-2xl p-6 shadow-sm flex flex-col h-[380px]">
-          <h3 className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider mb-6 pb-2 border-b border-gray-100 dark:border-white/[0.03]">Category Distribution</h3>
+          <h3 className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider mb-6 pb-2 border-b border-gray-100 dark:border-white/[0.03]">{t('dash_category_distribution')}</h3>
           <div className="flex-1 relative flex items-center justify-center">
             {stats.total > 0 ? (
               <Doughnut data={categoryData()} options={doughnutOptions} />
             ) : (
-              <p className="text-custom-text-muted text-body-md">No telemetry data available.</p>
+              <p className="text-custom-text-muted text-body-md">{t('dash_no_telemetry')}</p>
             )}
           </div>
         </div>
 
         {/* Complaint Trend */}
         <div className="bg-white dark:bg-[#121315] border border-gray-100 dark:border-white/[0.05] rounded-2xl p-6 shadow-sm flex flex-col h-[380px]">
-          <h3 className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider mb-6 pb-2 border-b border-gray-100 dark:border-white/[0.03]">Complaint Trend (This Week)</h3>
+          <h3 className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider mb-6 pb-2 border-b border-gray-100 dark:border-white/[0.03]">{t('dash_complaint_trend')}</h3>
           <div className="flex-1 relative">
             <Line data={trendData} options={chartOptions} />
           </div>
@@ -240,24 +240,24 @@ export default function Dashboard() {
 
         {/* Priority Breakdown */}
         <div className="bg-white dark:bg-[#121315] border border-gray-100 dark:border-white/[0.05] rounded-2xl p-6 shadow-sm flex flex-col h-[380px]">
-          <h3 className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider mb-6 pb-2 border-b border-gray-100 dark:border-white/[0.03]">Priority Breakdown</h3>
+          <h3 className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider mb-6 pb-2 border-b border-gray-100 dark:border-white/[0.03]">{t('dash_priority_breakdown')}</h3>
           <div className="flex-1 relative flex items-center justify-center">
             {stats.total > 0 ? (
               <Doughnut data={priorityData} options={doughnutOptions} />
             ) : (
-              <p className="text-custom-text-muted text-body-md">No telemetry data available.</p>
+              <p className="text-custom-text-muted text-body-md">{t('dash_no_telemetry')}</p>
             )}
           </div>
         </div>
 
         {/* Complaints by Category */}
         <div className="bg-white dark:bg-[#121315] border border-gray-100 dark:border-white/[0.05] rounded-2xl p-6 shadow-sm flex flex-col h-[380px]">
-          <h3 className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider mb-6 pb-2 border-b border-gray-100 dark:border-white/[0.03]">Complaints by Category</h3>
+          <h3 className="text-[12px] font-bold text-custom-text-muted uppercase tracking-wider mb-6 pb-2 border-b border-gray-100 dark:border-white/[0.03]">{t('dash_complaints_by_category')}</h3>
           <div className="flex-1 relative">
             {stats.total > 0 ? (
               <Bar data={barData()} options={chartOptions} />
             ) : (
-              <p className="text-custom-text-muted text-body-md">No telemetry data available.</p>
+              <p className="text-custom-text-muted text-body-md">{t('dash_no_telemetry')}</p>
             )}
           </div>
         </div>
@@ -266,9 +266,9 @@ export default function Dashboard() {
       {/* Recent Complaints */}
       <div className="bg-white dark:bg-[#121315] border border-gray-100 dark:border-white/[0.05] rounded-2xl p-6 shadow-sm">
         <div className="flex justify-between items-center mb-6 border-b border-gray-100 dark:border-white/[0.03] pb-4">
-          <h3 className="text-[13px] font-bold text-custom-text-muted uppercase tracking-wider">Recent Complaints</h3>
+          <h3 className="text-[13px] font-bold text-custom-text-muted uppercase tracking-wider">{t('dash_recent')}</h3>
           <Link to="/complaints" className="text-[13px] font-bold text-primary hover:text-opacity-80 flex items-center gap-1 transition-colors">
-            View All
+            {t('dash_view_all')}
             <FiArrowRight />
           </Link>
         </div>
@@ -342,7 +342,7 @@ export default function Dashboard() {
           ) : (
             <div className="text-center py-10 text-custom-text-muted">
               <span className="material-symbols-outlined text-[48px] opacity-30">inbox</span>
-              <p className="mt-2 text-body-md">No recent complaints filed.</p>
+              <p className="mt-2 text-body-md">{t('dash_no_complaints')}</p>
             </div>
           )}
         </div>

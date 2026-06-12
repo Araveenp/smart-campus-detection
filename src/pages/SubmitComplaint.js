@@ -146,7 +146,7 @@ function localParseVoiceSpeech(text) {
 }
 
 export default function SubmitComplaint() {
-  const { user } = useAuth();
+  const { user, t } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     title: '',
@@ -165,7 +165,13 @@ export default function SubmitComplaint() {
   const [isListening, setIsListening] = useState(false);
   const [voiceText, setVoiceText] = useState('');
   const [voiceProcessing, setVoiceProcessing] = useState(false);
-  const [voiceLang, setVoiceLang] = useState('en-IN');
+  const [voiceLang, setVoiceLang] = useState(user?.languagePreference || 'en-IN');
+
+  React.useEffect(() => {
+    if (user?.languagePreference) {
+      setVoiceLang(user.languagePreference);
+    }
+  }, [user]);
   const mediaRecorderRef = useRef(null);
   const websocketRef = useRef(null);
 
@@ -528,8 +534,8 @@ Respond in EXACTLY this JSON format, nothing else:
   return (
     <div className="submit-page">
       <div className="submit-header">
-        <h1><FiFileText /> Submit New Complaint</h1>
-        <p>Describe your issue and let AI classify and prioritize it automatically</p>
+        <h1><FiFileText /> {t('sub_header')}</h1>
+        <p>{t('sub_subtitle')}</p>
       </div>
 
       <div className="submit-layout">
@@ -540,7 +546,7 @@ Respond in EXACTLY this JSON format, nothing else:
             {/* Language Selector Dropdown */}
             <div className="flex items-center gap-2 mb-3 bg-white/10 dark:bg-white/[0.02] border border-gray-300 dark:border-white/[0.08] px-3 py-1.5 rounded-xl max-w-xs">
               <span className="material-symbols-outlined text-[16px] text-gray-500">translate</span>
-              <span className="text-[12px] font-semibold text-gray-600 dark:text-gray-400">Spoken Language:</span>
+              <span className="text-[12px] font-semibold text-gray-600 dark:text-gray-400">{t('sub_voice_lang')}:</span>
               <select
                 value={voiceLang}
                 onChange={(e) => setVoiceLang(e.target.value)}
@@ -569,14 +575,14 @@ Respond in EXACTLY this JSON format, nothing else:
               </button>
               <div className="voice-info">
                 <span className="voice-title">
-                  {isListening ? '🔴 Listening... Speak now' : voiceProcessing ? '⏳ AI processing...' : '🎙️ Voice Assistant'}
+                  {isListening ? t('sub_voice_listen') : voiceProcessing ? t('sub_voice_processing') : t('sub_voice_title')}
                 </span>
                 <span className="voice-subtitle">
                   {isListening
-                    ? 'Speak in any language — tap mic to stop'
+                    ? t('sub_voice_stop')
                     : voiceText && !voiceProcessing
-                    ? 'Speech captured! Click "Translate & Fill" below'
-                    : 'Tap the mic and speak your complaint in any language'}
+                    ? t('sub_voice_captured')
+                    : t('sub_voice_tap')}
                 </span>
               </div>
               {isListening && (
@@ -622,10 +628,10 @@ Respond in EXACTLY this JSON format, nothing else:
 
           <form onSubmit={handleSubmit} noValidate>
             <div className={`form-group ${errors.title ? 'error' : ''}`}>
-              <label>Complaint Title</label>
+              <label>{t('sub_title_label')}</label>
               <input
                 type="text"
-                placeholder="Brief title describing the issue"
+                placeholder={t('sub_title_placeholder')}
                 value={formData.title}
                 onChange={(e) => updateField('title', e.target.value)}
                 maxLength={100}
@@ -635,9 +641,9 @@ Respond in EXACTLY this JSON format, nothing else:
             </div>
 
             <div className={`form-group ${errors.description ? 'error' : ''}`}>
-              <label>Detailed Description</label>
+              <label>{t('sub_desc_label')}</label>
               <textarea
-                placeholder="Describe the problem in detail. Include what, where, when, and severity. The more detail you provide, the better the AI classification will be..."
+                placeholder={t('sub_desc_placeholder')}
                 value={formData.description}
                 onChange={(e) => updateField('description', e.target.value)}
                 rows={6}
@@ -648,19 +654,19 @@ Respond in EXACTLY this JSON format, nothing else:
             </div>
 
             <div className={`form-group ${errors.location ? 'error' : ''}`}>
-              <label><FiMapPin /> Location</label>
+              <label><FiMapPin /> {t('sub_location_label')}</label>
               <select
                 value={formData.location}
                 onChange={(e) => updateField('location', e.target.value)}
               >
-                <option value="">Select location of the issue</option>
+                <option value="">{t('sub_location_placeholder')}</option>
                 {locations.map(loc => <option key={loc} value={loc}>{loc}</option>)}
               </select>
               {errors.location && <span className="error-text">{errors.location}</span>}
             </div>
 
             <div className="form-group">
-              <label>Attach Image (optional)</label>
+              <label>{t('sub_image_label')}</label>
               <div className="input-wrapper">
                 <input type="file" accept="image/*" onChange={handleFileChange} />
               </div>
@@ -680,11 +686,11 @@ Respond in EXACTLY this JSON format, nothing else:
             >
               {analyzing ? (
                 <>
-                  <FiLoader className="spin" /> Analyzing with GenAI...
+                  <FiLoader className="spin" /> {t('sub_btn_analyzing')}
                 </>
               ) : (
                 <>
-                  <FiCpu /> Analyze with AI
+                  <FiCpu /> {t('sub_btn_analyze')}
                 </>
               )}
             </button>
@@ -697,11 +703,11 @@ Respond in EXACTLY this JSON format, nothing else:
             >
               {submitting ? (
                 <>
-                  <FiLoader className="spin" /> Submitting...
+                  <FiLoader className="spin" /> {t('sub_btn_submitting')}
                 </>
               ) : (
                 <>
-                  <FiSend /> Submit Complaint
+                  <FiSend /> {t('sub_btn_submit')}
                 </>
               )}
             </button>
@@ -719,8 +725,8 @@ Respond in EXACTLY this JSON format, nothing else:
                 exit={{ opacity: 0 }}
               >
                 <FiCpu className="placeholder-icon" />
-                <h3>AI Analysis</h3>
-                <p>Enter your complaint description and click "Analyze with AI" to get automatic classification, priority prediction, and recommended action plan.</p>
+                <h3>{t('sub_ai_panel_title')}</h3>
+                <p>{t('sub_ai_panel_desc')}</p>
               </motion.div>
             )}
 
@@ -745,7 +751,7 @@ Respond in EXACTLY this JSON format, nothing else:
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
               >
-                <h3>🤖 AI Analysis Results</h3>
+                <h3>{t('sub_ai_results')}</h3>
                 
                 {/* AI Source Badge */}
                 <div className="ai-source-badge-container">
@@ -763,8 +769,8 @@ Respond in EXACTLY this JSON format, nothing else:
                 {/* Category */}
                 <div className="result-card">
                   <div className="result-header">
-                    <span className="result-label">Predicted Category</span>
-                    <span className="confidence-badge">{aiAnalysis.confidence}% confidence</span>
+                    <span className="result-label">{t('sub_ai_predicted_cat')}</span>
+                    <span className="confidence-badge">{aiAnalysis.confidence}% {t('sub_ai_confidence')}</span>
                   </div>
                   <div className="result-value category-value">{aiAnalysis.category}</div>
                   <div className="confidence-bar">
@@ -778,7 +784,7 @@ Respond in EXACTLY this JSON format, nothing else:
                 {/* Priority */}
                 <div className="result-card">
                   <div className="result-header">
-                    <span className="result-label">Priority Level</span>
+                    <span className="result-label">{t('sub_ai_priority')}</span>
                     <FiAlertTriangle style={{ color: aiAnalysis.priority.color }} />
                   </div>
                   <div className="result-value">
@@ -793,7 +799,7 @@ Respond in EXACTLY this JSON format, nothing else:
                 {/* AI Summary */}
                 <div className="result-card">
                   <div className="result-header">
-                    <span className="result-label">AI Summary</span>
+                    <span className="result-label">{t('sub_ai_summary')}</span>
                   </div>
                   <p className="ai-summary-text">{aiAnalysis.summary}</p>
                 </div>
@@ -801,7 +807,7 @@ Respond in EXACTLY this JSON format, nothing else:
                 {/* SOPs */}
                 <div className="result-card">
                   <div className="result-header">
-                    <span className="result-label">Retrieved SOPs (RAG)</span>
+                    <span className="result-label">{t('sub_ai_sops')}</span>
                   </div>
                   <ul className="sop-list">
                     {aiAnalysis.ragResponse.sops.map((sop, i) => (
@@ -813,7 +819,7 @@ Respond in EXACTLY this JSON format, nothing else:
                 {/* Action Plan */}
                 <div className="result-card action-plan-card">
                   <div className="result-header">
-                    <span className="result-label">Generated Action Plan</span>
+                    <span className="result-label">{t('sub_ai_action_plan')}</span>
                   </div>
                   <ol className="action-plan-list">
                     {aiAnalysis.ragResponse.actionPlan.map((step, i) => (

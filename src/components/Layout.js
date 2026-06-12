@@ -7,7 +7,7 @@ import AIChatbot from './AIChatbot';
 import '../styles/layout.css';
 
 export default function Layout({ children }) {
-  const { user, logout } = useAuth();
+  const { user, logout, t } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -19,15 +19,15 @@ export default function Layout({ children }) {
   };
 
   const navItems = [
-    { to: '/dashboard', icon: <FiHome />, label: 'Dashboard' },
-    { to: '/submit-complaint', icon: <FiPlus />, label: 'Submit Complaint' },
-    { to: '/complaints', icon: <FiList />, label: 'Complaints' },
-    { to: '/heatmap', icon: <FiMap />, label: 'Campus Heatmap' },
-    { to: '/leaderboard', icon: <FiAward />, label: 'Leaderboard' },
-    ...(user?.role === 'admin' ? [{ to: '/analytics', icon: <FiBarChart2 />, label: 'Analytics' }] : []),
-    ...(user?.role === 'admin' ? [{ to: '/admin', icon: <FiSettings />, label: 'Admin Panel' }] : []),
-    ...(user?.role === 'admin' ? [{ to: '/dept-admins', icon: <FiBriefcase />, label: 'Dept Admins' }] : []),
-    { to: '/profile', icon: <FiUser />, label: 'Profile' }
+    { to: '/dashboard', icon: <FiHome />, label: t('nav_dashboard') },
+    { to: '/submit-complaint', icon: <FiPlus />, label: t('nav_submit') },
+    { to: '/complaints', icon: <FiList />, label: t('nav_complaints') },
+    { to: '/heatmap', icon: <FiMap />, label: t('nav_heatmap') },
+    { to: '/leaderboard', icon: <FiAward />, label: t('nav_leaderboard') },
+    ...(user?.role === 'admin' ? [{ to: '/analytics', icon: <FiBarChart2 />, label: t('nav_analytics') }] : []),
+    ...(user?.role === 'admin' ? [{ to: '/admin', icon: <FiSettings />, label: t('nav_admin') }] : []),
+    ...(user?.role === 'admin' ? [{ to: '/dept-admins', icon: <FiBriefcase />, label: t('nav_dept_admins') }] : []),
+    { to: '/profile', icon: <FiUser />, label: t('nav_profile') }
   ];
 
   return (
@@ -78,7 +78,7 @@ export default function Layout({ children }) {
           </div>
           <button className="btn-logout" onClick={handleLogout}>
             <FiLogOut />
-            {sidebarOpen && <span>Logout</span>}
+            {sidebarOpen && <span>{t('nav_logout')}</span>}
           </button>
         </div>
       </aside>

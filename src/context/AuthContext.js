@@ -5,6 +5,7 @@ import {
   fbCreateUser, fbUpdateUser, fbDeleteUser, fbSeedAdmin,
   fbLoginWithGoogle
 } from '../services/firebase';
+import { getTranslation } from '../utils/localization';
 
 const AuthContext = createContext(null);
 
@@ -20,6 +21,29 @@ const SESSION_KEY = 'smart_campus_session';
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [language, setLanguage] = useState('en-IN');
+
+  useEffect(() => {
+    if (user) {
+      setLanguage(user.languagePreference || 'en-IN');
+    } else {
+      const guestLang = localStorage.getItem('smart_campus_guest_lang');
+      if (guestLang) setLanguage(guestLang);
+    }
+  }, [user]);
+
+  const changeLanguage = async (newLang) => {
+    setLanguage(newLang);
+    if (user) {
+      await updateProfile({ languagePreference: newLang });
+    } else {
+      localStorage.setItem('smart_campus_guest_lang', newLang);
+    }
+  };
+
+  const t = (key) => {
+    return getTranslation(language, key);
+  };
 
   // On mount: seed admin in Firebase, restore session
   useEffect(() => {
@@ -69,6 +93,7 @@ export function AuthProvider({ children }) {
       studentId: userData.studentId || '',
       phone: userData.phone || '',
       designation: userData.designation || '',
+      languagePreference: userData.languagePreference || 'en-IN',
       emailVerified: userData.emailVerified || false,
       approved: true,
       rejected: false,
@@ -216,6 +241,9 @@ export function AuthProvider({ children }) {
       updateProfile,
       loginWithGoogle,
       signupWithGoogle,
+      language,
+      changeLanguage,
+      t,
       // Admin utilities
       getPendingUsers,
       approveUser,
