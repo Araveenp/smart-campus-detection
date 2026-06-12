@@ -93,7 +93,7 @@ export function AuthProvider({ children }) {
       studentId: userData.studentId || '',
       phone: userData.phone || '',
       designation: userData.designation || '',
-      languagePreference: userData.languagePreference || 'en-IN',
+      languagePreference: userData.languagePreference || '',
       emailVerified: userData.emailVerified || false,
       approved: true,
       rejected: false,

@@ -8,15 +8,24 @@ export default function LanguageOverlay() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const hasChosen = localStorage.getItem('smart_campus_lang_chosen');
-    if (!user && !hasChosen) {
-      setVisible(true);
+    if (user) {
+      const hasChosen = localStorage.getItem(`smart_campus_lang_chosen_${user.id}`);
+      // Show if the user doesn't have a languagePreference and hasn't chosen it on this device
+      if (!user.languagePreference && !hasChosen) {
+        setVisible(true);
+      } else {
+        setVisible(false);
+      }
+    } else {
+      setVisible(false);
     }
   }, [user]);
 
   const handleSelectLanguage = (lang) => {
     changeLanguage(lang);
-    localStorage.setItem('smart_campus_lang_chosen', 'true');
+    if (user) {
+      localStorage.setItem(`smart_campus_lang_chosen_${user.id}`, 'true');
+    }
     setVisible(false);
   };
 

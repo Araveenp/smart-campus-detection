@@ -21,7 +21,7 @@ export default function Signup() {
     studentId: '',
     phone: '',
     designation: '', // staff only
-    languagePreference: 'en-IN'
+    languagePreference: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -275,7 +275,7 @@ export default function Signup() {
     setFormData({
       name: '', email: '', password: '', confirmPassword: '',
       department: '', studentId: '', phone: '', designation: '',
-      languagePreference: 'en-IN'
+      languagePreference: ''
     });
     setOtp(['', '', '', '', '', '']);
     setRollValidation(null);
