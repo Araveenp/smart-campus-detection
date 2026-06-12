@@ -68,12 +68,14 @@ export default function ManageComplaints() {
     fbGetDeptAdmins().then(admins => setDeptAdmins(admins)).catch(() => {});
   }, [loadComplaints]);
 
-  // Build tabs: predefined + any dynamic ones not in predefined
-  const complaintCategories = [...new Set(complaints.map(c => c.category))];
-  const dynamicTabs = complaintCategories.filter(
-    cat => !PROBLEM_TYPES.some(pt => pt.toLowerCase() === cat.toLowerCase())
-  );
-  const allTabs = [...PROBLEM_TYPES, ...dynamicTabs];
+  // Build tabs: predefined + any dynamic ones not in predefined memoized to keep stable reference
+  const allTabs = useMemo(() => {
+    const complaintCategories = [...new Set(complaints.map(c => c.category))];
+    const dynamicTabs = complaintCategories.filter(
+      cat => !PROBLEM_TYPES.some(pt => pt.toLowerCase() === cat.toLowerCase())
+    );
+    return [...PROBLEM_TYPES, ...dynamicTabs];
+  }, [complaints]);
 
   // Split into visible and overflow
   const visibleTabs = allTabs.slice(0, VISIBLE_TAB_COUNT);
